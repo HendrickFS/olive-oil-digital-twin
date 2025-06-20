@@ -1,0 +1,70 @@
+# Copyright (c) 2024 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0
+#
+# SPDX-License-Identifier: EPL-2.0
+{{- if and .Values.global.podDeletionCostPatching.enabled -}}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "ditto.fullname" . }}-pod-deletion-cron-job
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "ditto.labels" . | indent 4 }}
+spec:
+  schedule: "*/5 * * * *" # every 5 minutes
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          name: {{ include "ditto.fullname" . }}-pod-deletion-cron-job
+          labels:
+            app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+            app.kubernetes.io/instance: {{ .Release.Name | quote }}
+            helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+          {{- with .Values.global.podDeletionCostPatching.annotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        spec:
+          {{- if .Values.rbac.enabled }}
+          serviceAccountName: {{ template "ditto.serviceAccountName" . }}
+          {{- end }}
+          {{- with .Values.global.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          restartPolicy: Never
+          containers:
+            - name: {{ .Chart.Name }}-pod-deletion-cost-cronjob
+              securityContext:
+                runAsUser: {{ .Values.global.podDeletionCostPatching.user }}
+                runAsGroup: {{  .Values.global.podDeletionCostPatching.group }}
+                allowPrivilegeEscalation: {{ .Values.global.podDeletionCostPatching.allowPrivilegeEscalation }}
+                runAsNonRoot: {{ .Values.global.podDeletionCostPatching.runAsNonRoot }}
+              image: {{ printf "%s:%s" .Values.global.podDeletionCostPatching.image.repository ( default .Values.global.podDeletionCostPatching.image.tag "latest" ) }}
+              imagePullPolicy: {{ .Values.global.podDeletionCostPatching.image.pullPolicy }}
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  cd /opt/ditto-scripts
+                  ./patch-pods-deletion-cost.sh
+              volumeMounts:
+              - name: hook-scripts
+                mountPath: "/opt/ditto-scripts"
+          volumes:
+            - name: hook-scripts
+              configMap:
+                name: {{ include "ditto.fullname" . }}-hook-scripts
+                defaultMode: 0555
+{{- end }}

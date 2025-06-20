@@ -1,0 +1,13 @@
+---
+# this is an example how to restrict resources on a global level.
+# for more information see: https://kubernetes.io/docs/concepts/policy/resource-quotas/
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: compute-resources
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    limits.cpu: "8"
+    limits.memory: 32Gi

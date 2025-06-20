@@ -1,0 +1,378 @@
+# Copyright (c) 2023 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0
+#
+# SPDX-License-Identifier: EPL-2.0
+{{- $name := include "ditto.name" . -}}
+{{- if .Values.thingsSearch.enabled -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ditto.fullname" . }}-thingssearch
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}-thingssearch
+{{ include "ditto.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.thingsSearch.replicaCount }}
+  strategy:
+  {{- with .Values.thingsSearch.updateStrategy }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  minReadySeconds: {{ .Values.thingsSearch.minReadySeconds }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $name }}-thingssearch
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $name }}-thingssearch
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        actorSystemName: {{ .Values.pekko.actorSystemName }}
+        {{- with .Values.thingsSearch.additionalLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- if .Values.global.prometheus.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "{{ .Values.global.prometheus.path }}"
+        prometheus.io/port: "{{ .Values.global.prometheus.port }}"
+        {{- end }}
+        checksum/mongodb-config: {{ include (print $.Template.BasePath "/mongodb-secret.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/thingssearch-configmap.yaml") . | sha256sum }}
+        {{- with .Values.global.additionalAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.thingsSearch.additionalAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ template "ditto.serviceAccountName" . }}
+      {{- end }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        fsGroup: 1000
+      initContainers:
+        {{- if .Values.global.logging.logFiles.enabled }}
+        - name: change-volume-owner
+          image: busybox
+          securityContext:
+            runAsUser: 0
+          command: [ "sh", "-c", "chown -R 1005:1005 /var/log/ditto && echo 'changed ownership of /var/log/ditto to 1005:1005'" ]
+          volumeMounts:
+            - name: ditto-log-files-directory
+              mountPath: /var/log/ditto
+        {{- end }}
+      topologySpreadConstraints:
+      {{- range .Values.thingsSearch.topologySpreadConstraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ $name }}-thingssearch
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}-thingssearch
+          image: {{ printf "%s:%s" .Values.thingsSearch.image.repository ( default .Chart.AppVersion ( default .Values.dittoTag .Values.thingsSearch.image.tag ) ) }}
+          imagePullPolicy: {{ .Values.thingsSearch.image.pullPolicy }}
+          env:
+            {{- if not .Values.global.logging.customConfigFile.enabled }}
+            - name: DITTO_LOGGING_DISABLE_SYSOUT_LOG
+              value: "{{ printf "%t" .Values.global.logging.sysout.enabled }}"
+            - name: DITTO_LOGGING_FILE_APPENDER
+              value: "{{ printf "%t" .Values.global.logging.logFiles.enabled }}"
+            {{- end }}
+            - name: DITTO_METRICS_METRIC_PREFIX
+              value: "{{ .Values.global.metrics.metricsPrefix }}"
+            - name: SYSTEM_METRICS_ENABLED
+              value: "{{ .Values.global.metrics.systemMetrics.enabled }}"
+            - name: DITTO_TRACING_ENABLED
+              value: "{{ .Values.global.tracing.enabled }}"
+            - name: DITTO_TRACING_OTEL_TRACE_REPORTER_ENABLED
+              value: "{{ .Values.global.tracing.otelTraceReporterEnabled }}"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "{{ tpl .Values.global.tracing.otelExporterOtlpEndpoint . }}"
+            - name: DITTO_TRACING_SAMPLER
+              value: "{{ .Values.global.tracing.sampler }}"
+            - name: DITTO_TRACING_RANDOM_SAMPLER_PROBABILITY
+              value: "{{ .Values.global.tracing.randomSampler.probability }}"
+            - name: DITTO_TRACING_ADAPTIVE_SAMPLER_THROUGHPUT
+              value: "{{ .Values.global.tracing.adaptiveSampler.throughput }}"
+            {{- if .Values.global.logging.logstash.enabled }}
+            - name: DITTO_LOGGING_LOGSTASH_SERVER
+              value: "{{ .Values.global.logging.logstash.endpoint }}"
+            - name: LOGSTASH_WRITE_BUFFER_SIZE
+              value: "{{ .Values.global.logging.logstash.writeBufferSize }}"
+            - name: LOGSTASH_RING_BUFFER_SIZE
+              value: "{{ .Values.global.logging.logstash.ringBufferSize }}"
+            {{- end }}
+            - name: POD_LABEL_SELECTOR
+              value: "app.kubernetes.io/name=%s"
+            - name: POD_NAMESPACE
+              value: {{.Release.Namespace}}
+            - name: INSTANCE_INDEX
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: DISCOVERY_METHOD
+              value: "kubernetes-api"
+            - name: TZ
+              value: "{{ .Values.global.timezone }}"
+            - name: JAVA_TOOL_OPTIONS
+              value: >
+                {{ .Values.global.jvmOptions }}
+                -XX:ActiveProcessorCount={{ .Values.thingsSearch.jvm.activeProcessorCount }}
+                -XX:MaxRAMPercentage={{ .Values.thingsSearch.jvm.heapRamPercentage }}
+                -XX:InitialRAMPercentage={{ .Values.thingsSearch.jvm.heapRamPercentage }}
+                -XX:MaxGCPauseMillis={{ .Values.thingsSearch.jvm.maxGcPauseMillis }}
+                {{ .Values.thingsSearch.additionalJvmOptions }}
+                {{ .Values.global.pekkoOptions }}
+                {{- if .Values.global.logging.customConfigFile.enabled }}
+                -Dlogback.configurationFile=/opt/ditto/{{ .Values.global.logging.customConfigFile.fileName }}
+                {{- end }}
+                {{ join " " .Values.thingsSearch.systemProps }}
+            - name: MONGO_DB_SSL_ENABLED
+              value: "{{ printf "%t" .Values.dbconfig.thingsSearch.ssl }}"
+            - name: MONGO_DB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.dbconfig.uriSecret | default ( printf "%s-mongodb-secret" ( include "ditto.fullname" . )) }}
+                  key: thingsSearch-uri
+            - name: MONGO_DB_CONNECTION_MIN_POOL_SIZE
+              value: "{{ .Values.thingsSearch.config.mongodb.minPoolSize }}"
+            - name: MONGO_DB_CONNECTION_POOL_SIZE
+              value: "{{ .Values.thingsSearch.config.mongodb.maxPoolSize }}"
+            - name: MONGO_DB_CONNECTION_POOL_IDLE_TIME
+              value: "{{ .Values.thingsSearch.config.mongodb.maxPoolIdleTime }}"
+            {{- if .Values.global.prometheus.enabled }}
+            - name: PROMETHEUS_PORT
+              value: "{{ .Values.global.prometheus.port }}"
+            {{- end }}
+            - name: CLUSTER_BS_REQUIRED_CONTACTS
+              value: "{{ .Values.global.cluster.requiredContactPoints }}"
+            - name: DITTO_DDATA_NUMBER_OF_SHARDS
+              value: "{{ .Values.global.cluster.ddata.numberOfShards }}"
+            - name: DITTO_DDATA_MAX_DELTA_ELEMENTS
+              value: "{{ .Values.global.cluster.ddata.maxDeltaElements }}"
+            - name: CLUSTER_NUMBER_OF_SHARDS
+              value: "{{ .Values.global.cluster.numberOfShards }}"
+            - name: CLUSTER_DOWNING_STABLE_AFTER
+              value: "{{ .Values.global.cluster.downingStableAfter }}"
+            - name: CLUSTER_DOWNING_DOWN_ALL_WHEN_UNSTABLE
+              value: "{{ .Values.global.cluster.downAllWhenUnstable }}"
+            - name: REMOTE_MAX_FRAMESIZE
+              value: "{{ .Values.global.limits.clusterMaxFramesize }}"
+            - name: LIMITS_THINGS_MAX_SIZE
+              value: "{{ .Values.global.limits.thingsMaxSize }}"
+            - name: LIMITS_POLICIES_MAX_SIZE
+              value: "{{ .Values.global.limits.policiesMaxSize }}"
+            - name: LIMITS_POLICIES_MAX_IMPORTS
+              value: "{{ .Values.global.limits.policiesMaxImports }}"
+            - name: LIMITS_MESSAGES_MAX_SIZE
+              value: "{{ .Values.global.limits.messagesMaxSize }}"
+            - name: LIMITS_MESSAGES_HEADERS_SIZE
+              value: "{{ .Values.global.limits.maxHeadersSize }}"
+            - name: LIMITS_MESSAGES_AUTH_SUBJECTS_COUNT
+              value: "{{ .Values.global.limits.maxAuthSubjectsCount }}"
+            - name: MONGO_DB_READ_PREFERENCE
+              value: "{{ .Values.thingsSearch.config.mongodb.searchReadPreference }}"
+            - name: QUERY_PERSISTENCE_MONGO_DB_READ_CONCERN
+              value: "{{ .Values.thingsSearch.config.mongodb.queryReadConcern }}"
+            - name: MONGO_DB_WRITE_CONCERN
+              value: "{{ .Values.thingsSearch.config.mongodb.searchWriteConcern }}"
+            - name: UPDATER_PERSISTENCE_MONGO_DB_READ_CONCERN
+              value: "{{ .Values.thingsSearch.config.mongodb.updaterPersistenceReadConcern }}"
+            - name: UPDATER_PERSISTENCE_MONGO_DB_READ_PREFERENCE
+              value: "{{ .Values.thingsSearch.config.mongodb.updaterPersistenceReadPreference }}"
+            - name: POLICY_MODIFICATION_CAUSED_SEARCH_INDEX_UPDATE_THROTTLING_ENABLED
+              value: "{{ .Values.thingsSearch.config.mongodb.policyModificationCausedSearchIndexUpdateThrottling.enabled }}"
+            - name: POLICY_MODIFICATION_CAUSED_SEARCH_INDEX_UPDATE_THROTTLING_INTERVAL
+              value: "{{ .Values.thingsSearch.config.mongodb.policyModificationCausedSearchIndexUpdateThrottling.interval }}"
+            - name: POLICY_MODIFICATION_CAUSED_SEARCH_INDEX_UPDATE_THROTTLING_LIMIT
+              value: "{{ .Values.thingsSearch.config.mongodb.policyModificationCausedSearchIndexUpdateThrottling.limit }}"
+            - name: THINGS_SEARCH_UPDATER_STREAM_PERSISTENCE_WITH_ACKS_WRITE_CONCERN
+              value: "{{ .Values.thingsSearch.config.mongodb.searchWithAcksWriteConcern }}"
+            - name: THINGS_SEARCH_UPDATER_STREAM_POLICY_CACHE_SIZE
+              value: "{{ .Values.thingsSearch.config.updater.stream.policiesEnforcer.cache.maxSize }}"
+            - name: THINGS_SEARCH_UPDATER_STREAM_POLICY_CACHE_EXPIRY
+              value: "{{ .Values.thingsSearch.config.updater.stream.policiesEnforcer.cache.expireAfterWrite }}"
+            - name: THINGS_SEARCH_UPDATER_STREAM_POLICY_CACHE_EXPIRY_AFTER_ACCESS
+              value: "{{ .Values.thingsSearch.config.updater.stream.policiesEnforcer.cache.expireAfterAccess }}"
+            - name: THINGS_SEARCH_UPDATER_STREAM_THING_CACHE_SIZE
+              value: "{{ .Values.thingsSearch.config.updater.stream.thingCache.maxSize }}"
+            - name: THINGS_SEARCH_UPDATER_STREAM_THING_CACHE_EXPIRY
+              value: "{{ .Values.thingsSearch.config.updater.stream.thingCache.expireAfterWrite }}"
+            - name: THINGS_SEARCH_UPDATER_STREAM_THING_CACHE_EXPIRY_AFTER_ACCESS
+              value: "{{ .Values.thingsSearch.config.updater.stream.thingCache.expireAfterAccess }}"
+            - name: THINGS_SEARCH_UPDATER_STREAM_RETRIEVAL_PARALLELISM
+              value: "{{ .Values.thingsSearch.config.updater.stream.retrievalParallelism }}"
+            - name: THINGS_SEARCH_UPDATER_STREAM_PERSISTENCE_PARALLELISM
+              value: "{{ .Values.thingsSearch.config.updater.stream.persistence.parallelism }}"
+            - name: THINGS_SEARCH_OPERATOR_METRICS_ENABLED
+              value: "{{ .Values.thingsSearch.config.operatorMetrics.enabled }}"
+            - name: THINGS_SEARCH_OPERATOR_METRICS_SCRAPE_INTERVAL
+              value: "{{ .Values.thingsSearch.config.operatorMetrics.scrapeInterval }}"
+            - name: ACTIVITY_CHECK_INTERVAL
+              value: "{{ .Values.thingsSearch.config.updater.activityCheckInterval }}"
+            - name: BACKGROUND_SYNC_ENABLED
+              value: "{{ .Values.thingsSearch.config.updater.backgroundSync.enabled }}"
+            - name: BACKGROUND_SYNC_QUIET_PERIOD
+              value: "{{ .Values.thingsSearch.config.updater.backgroundSync.quietPeriod }}"
+            - name: BACKGROUND_SYNC_IDLE_TIMEOUT
+              value: "{{ .Values.thingsSearch.config.updater.backgroundSync.idleTimeout }}"
+            - name: BACKGROUND_SYNC_TOLERANCE_WINDOW
+              value: "{{ .Values.thingsSearch.config.updater.backgroundSync.toleranceWindow }}"
+            - name: BACKGROUND_SYNC_KEEP_EVENTS
+              value: "{{ .Values.thingsSearch.config.updater.backgroundSync.keepEvents }}"
+            - name: BACKGROUND_SYNC_THROTTLE_THROUGHPUT
+              value: "{{ .Values.thingsSearch.config.updater.backgroundSync.throttle.throughput }}"
+            - name: BACKGROUND_SYCN_THROTTLE_PERIOD
+              value: "{{ .Values.thingsSearch.config.updater.backgroundSync.throttle.period }}"
+            {{- if .Values.thingsSearch.extraEnv }}
+              {{- toYaml .Values.thingsSearch.extraEnv | nindent 12 }}
+            {{- end }}
+            - name: MONGO_DB_USE_AWS_IAM_ROLE
+              value: "{{ printf "%t" .Values.dbconfig.thingsSearch.useAwsIamRole }}"
+            {{- if .Values.dbconfig.thingsSearch.useAwsIamRole }}
+            - name: MONGO_DB_AWS_REGION
+              value: "{{ .Values.dbconfig.thingsSearch.awsRegion }}"
+            - name: MONGO_DB_AWS_ROLE_ARN
+              value: "{{ .Values.dbconfig.thingsSearch.awsRoleArn }}"
+            - name: AWS_ROLE_ARN
+              value: "{{ .Values.dbconfig.thingsSearch.awsRoleArn }}"
+            - name: AWS_WEB_IDENTITY_TOKEN_FILE
+              value: "/var/run/secrets/eks.amazonaws.com/serviceaccount/token"
+            - name: MONGO_DB_AWS_SESSION_NAME
+              value: "{{ .Values.dbconfig.thingsSearch.awsSessionName }}"
+            {{- end }}
+          ports:
+            - name: remoting
+              containerPort: {{ .Values.pekko.remoting.port }}
+              protocol: TCP
+            - name: management
+              containerPort: {{ .Values.pekko.mgmthttp.port }}
+              protocol: TCP
+            {{- if .Values.global.prometheus.enabled }}
+            - name: prometheus
+              protocol: TCP
+              containerPort: {{ .Values.global.prometheus.port }}
+            {{- end }}
+          startupProbe:
+            httpGet:
+              port: management
+              path: /ready
+            initialDelaySeconds: {{ .Values.thingsSearch.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.thingsSearch.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.thingsSearch.startupProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.thingsSearch.startupProbe.successThreshold }}
+            failureThreshold: {{ .Values.thingsSearch.startupProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              port: management
+              path: /ready
+            periodSeconds: {{ .Values.thingsSearch.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.thingsSearch.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.thingsSearch.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.thingsSearch.readinessProbe.failureThreshold }}
+          livenessProbe:
+            httpGet:
+              port: management
+              path: /alive
+            initialDelaySeconds: {{ .Values.thingsSearch.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.thingsSearch.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.thingsSearch.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.thingsSearch.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.thingsSearch.livenessProbe.failureThreshold }}
+          volumeMounts:
+            - name: search-extension-conf
+              mountPath: /opt/ditto/search-extension.conf
+              subPath: search-extension.conf
+            {{- if .Values.global.logging.customConfigFile.enabled }}
+            - name: ditto-custom-log-config
+              mountPath: /opt/ditto/{{ .Values.global.logging.customConfigFile.fileName }}
+              subPath: {{ .Values.global.logging.customConfigFile.fileName }}
+            {{- end }}
+            {{- if .Values.global.logging.logFiles.enabled }}
+            - name: ditto-log-files-directory
+              mountPath: /var/log/ditto
+            {{- end }}
+            {{- if .Values.thingsSearch.extraVolumeMounts }}
+              {{- toYaml .Values.thingsSearch.extraVolumeMounts | nindent 12 }}
+            {{- end }}
+            - name: ditto-heap-dumps
+              mountPath: /opt/ditto/dumps
+          resources:
+            requests:
+              cpu: {{ mulf .Values.thingsSearch.resources.cpu 1000 }}m
+              memory: {{ .Values.thingsSearch.resources.memoryMi }}Mi
+              ephemeral-storage: {{ .Values.thingsSearch.resources.ephemeralStorageMi }}Mi
+            limits:
+              # ## no cpu limit to avoid CFS scheduler limits
+              # ref: https://pekko.apache.org/docs/pekko/current/additional/deploying.html#deploying-to-kubernetes
+              # cpu: ""
+              memory: {{ .Values.thingsSearch.resources.memoryMi }}Mi
+              ephemeral-storage: {{ .Values.thingsSearch.resources.ephemeralStorageMi }}Mi
+          {{- if .Values.openshift.enabled }}
+          {{- with .Values.openshift.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- else }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+          {{- end }}
+      priorityClassName: "{{ .Values.thingsSearch.priorityClassName }}"
+      {{- with .Values.thingsSearch.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.thingsSearch.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.thingsSearch.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: search-extension-conf
+          configMap:
+            name: {{ .Release.Name }}-service-config-search-extension-conf
+        {{- if .Values.global.logging.customConfigFile.enabled }}
+        - name: ditto-custom-log-config
+          configMap:
+            name: {{ .Release.Name }}-logback-config-thingssearch-xml
+        {{- end }}
+        {{- if .Values.global.logging.logFiles.enabled }}
+        - name: ditto-log-files-directory
+          hostPath:
+            path: /var/log/ditto
+            type: DirectoryOrCreate
+        {{- end }}
+        {{- if .Values.thingsSearch.extraVolumes }}
+          {{- toYaml .Values.thingsSearch.extraVolumes | nindent 8 }}
+        {{- end}}
+        - name: ditto-heap-dumps
+          emptyDir: {}
+{{- end }}

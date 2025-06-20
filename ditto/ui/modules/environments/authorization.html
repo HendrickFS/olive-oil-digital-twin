@@ -1,0 +1,138 @@
+<!--
+  ~ Copyright (c) 2022 Contributors to the Eclipse Foundation
+  ~
+  ~ See the NOTICE file(s) distributed with this work for additional
+  ~ information regarding copyright ownership.
+  ~
+  ~ This program and the accompanying materials are made available under the
+  ~ terms of the Eclipse Public License 2.0 which is available at
+  ~ http://www.eclipse.org/legal/epl-2.0
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+  -->
+<div id="authorizationModal" class="modal fade" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                Authorize
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form class="modal-body">
+                <div class="row">
+                    <h5>Main authentication</h5>
+                    <hr />
+                    <div class="row" id="mainOidcSection">
+                      <div class="col-md-5">
+                        <input type="radio" id="main-oidc" name="main-auth-method" value="oidc">
+                        <label for="main-oidc">Single-Sign-On</label>
+                      </div>
+                      <div class="col-md-7">
+                        <div class="input-group">
+                          <label for="oidcProvider" class="input-group-text"><small>SSO provider</small></label>
+                          <select class="form-select form-select-sm me-2" id="oidcProvider"></select>
+                          <input type="hidden" class="form-control form-control-sm" id="oidcBearer" name="oidcBearer" />
+                          <button type="button" class="btn btn-outline-secondary btn-sm" id="main-oidc-login" data-bs-dismiss="modal">Login</button>
+                          <button type="button" class="btn btn-outline-secondary btn-sm" id="main-oidc-logout" data-bs-dismiss="modal">Logout</button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row pt-2" id="mainBasicSection">
+                        <div class="col-md-5">
+                            <input type="radio" id="main-userpass" name="main-auth-method" value="basic" />
+                            <label for="main-userpass">Basic</label>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="input-group input-group-sm mb-1">
+                                <label for="userName" class="input-group-text">Username</label>
+                                <input type="text" class="form-control form-control-sm" id="userName" name="username" />
+                            </div>
+                            <div class="input-group input-group-sm mb-1">
+                                <label for="password" class="input-group-text">Password</label>
+                                <input type="password" class="form-control form-control-sm" id="password" name="password" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row pt-2" id="mainBearerSection">
+                        <div class="col-md-5">
+                            <input type="radio" id="main-bearer" name="main-auth-method" value="bearer">
+                            <label for="main-bearer">Bearer<br /><small>(JWT OAuth2.0 Bearer token)</small></label>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="input-group input-group-sm mb-1">
+                                <label for="bearer" class="input-group-text">Bearer</label>
+                                <input type="password" class="form-control form-control-sm" id="bearer" name="bearer" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row pt-2" id="mainPreAuthenticatedSection">
+                        <div class="col-md-5">
+                            <input type="radio" id="main-pre" name="main-auth-method" value="pre" />
+                            <label for="main-pre">Pre authenticated<br />
+                                <small>(via HTTP header 'x-ditto-pre-authenticated', must take the form
+                                    <code>prefix:suffix</code>)</small>
+                            </label>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="input-group input-group-sm mb-1">
+                                <label for="dittoPreAuthenticatedUsername" class="input-group-text">prefix:suffix</label>
+                                <input type="text" class="form-control form-control-sm" id="dittoPreAuthenticatedUsername" name="pre-authenticated-username"  />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <h5>DevOps authentication</h5>
+                    <small>(for Connections and administrative tasks, optional)</small>
+                    <hr />
+                    <div class="row" id="devOpsOidcSection">
+                      <div class="col-md-5">
+                        <input type="radio" id="devops-oidc" name="devops-auth-method" value="oidc" />
+                        <label for="devops-oidc">Single-Sign-On</label>
+                      </div>
+                      <div class="col-md-7">
+                        <div class="input-group">
+                          <label for="devOpsOidcProvider" class="input-group-text"><small>SSO provider</small></label>
+                          <select class="form-select form-select-sm me-2" id="devOpsOidcProvider"></select>
+                          <input type="hidden" class="form-control form-control-sm" id="oidcBearerDevOps" name="oidcBearerDevOps" />
+                          <button type="button" class="btn btn-outline-secondary btn-sm" id="devops-oidc-login" data-bs-dismiss="modal">Login</button>
+                          <button type="button" class="btn btn-outline-secondary btn-sm" id="devops-oidc-logout" data-bs-dismiss="modal">Logout</button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row pt-2" id="devOpsBasicSection">
+                        <div class="col-md-5">
+                            <input type="radio" id="devops-userpass" name="devops-auth-method" value="basic" />
+                            <label for="devops-userpass">Basic<br /></label>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="input-group input-group-sm mb-1">
+                                <label for="devOpsUserName" class="input-group-text">DevOps Username</label>
+                                <input type="text" class="form-control form-control-sm" id="devOpsUserName" name="username" />
+                            </div>
+                            <div class="input-group input-group-sm mb-1">
+                                <label for="devOpsPassword" class="input-group-text">DevOps Password</label>
+                                <input type="password" class="form-control form-control-sm" id="devOpsPassword" name="password" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row pt-2" id="devOpsBearerSection">
+                        <div class="col-md-5">
+                            <input type="radio" id="devops-bearer" name="devops-auth-method" value="bearer" />
+                            <label for="devops-bearer">Bearer<br /><small>(JWT OAuth2.0 Bearer token)</small></label>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="input-group input-group-sm mb-1">
+                                <label for="bearerDevOps" class="input-group-text">DevOps Bearer</label>
+                                <input type="password" class="form-control form-control-sm" id="bearerDevOps" name="devops-bearer" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group input-group-sm" style="flex-direction: row-reverse;">
+                    <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal"
+                        id="authorizeSubmit">Authorize</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

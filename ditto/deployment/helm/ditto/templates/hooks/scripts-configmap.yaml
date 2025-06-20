@@ -1,0 +1,32 @@
+# Copyright (c) 2024 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0
+#
+# SPDX-License-Identifier: EPL-2.0
+{{- if and .Values.global.podDeletionCostPatching.enabled -}}
+{{- $releaseName := .Release.Name -}}
+{{- $name := include "ditto.name" . -}}
+{{- $labels := include "ditto.labels" . -}}
+{{ $root := . }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ditto.fullname" . }}-hook-scripts
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}-hook-scripts
+  annotations:
+    helm.sh/hook: pre-upgrade,pre-install
+    helm.sh/hook-weight: "-5"
+    helm.sh/resource-policy: keep
+{{ $labels | indent 4 }}
+data:
+  patch-pods-deletion-cost.sh: |-
+{{ $root.Files.Get "scripts/patch-pods-deletion-cost.sh" | nindent 4 }}
+{{- end }}

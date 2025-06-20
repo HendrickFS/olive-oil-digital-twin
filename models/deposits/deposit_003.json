@@ -1,0 +1,12 @@
+{
+    "thingId": "olive.deposits:deposit003",
+    "policyId": "olive.default:policy",
+    "features": {
+        "temperature": {
+            "properties": {
+                "value": 25,
+                "unit": "\u00B0C"
+            }
+        }
+    }
+}

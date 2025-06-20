@@ -1,0 +1,510 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connectivity
+  labels:
+    app: connectivity
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  minReadySeconds: 30
+  selector:
+    matchLabels:
+      app: connectivity
+  template:
+    metadata:
+      labels:
+        app: connectivity
+        actorSystemName: ditto-cluster
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: connectivity
+        image: docker.io/eclipse/ditto-connectivity:latest
+        imagePullPolicy: IfNotPresent
+        # Resource can be managed by setting the following resource config.
+        #resources:
+        #  requests:
+        #    cpu: "1"
+        #    memory: "1Gi"
+        #  limits:
+        #    # cpu: "" no cpu limit to avoid CFS scheduler limits see https://pekko.apache.org/docs/pekko/current/additional/deploy.html#in-kubernetes
+        #    memory: "4Gi"
+        volumeMounts:
+          - name: ditto-log-files-directory
+            mountPath: /var/log/ditto
+        ports:
+        - name: remoting
+          containerPort: 2551
+          protocol: TCP
+        - name: management
+          containerPort: 7626
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            port: management
+            path: /ready
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            port: management
+            path: /alive
+          initialDelaySeconds: 180
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 4
+        env:
+        - name: INSTANCE_INDEX
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: DISCOVERY_METHOD
+          value: "kubernetes-api"
+        - name: TZ
+          value: "Europe/Berlin"
+        - name: JAVA_TOOL_OPTIONS
+          value: "-XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError -XX:+UseContainerSupport -XX:+UseStringDeduplication -Xss512k -XX:MaxRAMPercentage=50 -XX:+UseG1GC -XX:MaxGCPauseMillis=150 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=60s -Dpekko.cluster.failure-detector.threshold=15.0 -Dpekko.cluster.failure-detector.expected-response-after=10s -Dpekko.cluster.failure-detector.acceptable-heartbeat-pause=30s"
+        - name: MONGO_DB_HOSTNAME
+          value: "mongodb"
+        # in order to read the MONGO_DB_URI from a kubernetes secret replace the above lines for MONGO_DB_HOSTNAME with the following ones
+        #- name: MONGO_DB_URI
+        #  valueFrom:
+        #    secretKeyRef:
+        #      name: mongodb
+        #      key: mongodb-uri
+        ### -
+        # in order to write logs into a file you can enable this by setting the following env variable
+        # the log file(s) can be found in /var/log/ditto directory on the host machine
+        #- name: DITTO_LOGGING_FILE_APPENDER
+        #  value: "true"
+      volumes:
+        - name: ditto-log-files-directory
+          hostPath:
+            path: /var/log/ditto
+            type: DirectoryOrCreate
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: things
+  labels:
+    app: things
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  minReadySeconds: 30
+  selector:
+    matchLabels:
+      app: things
+  template:
+    metadata:
+      labels:
+        app: things
+        actorSystemName: ditto-cluster
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: things
+        image: docker.io/eclipse/ditto-things:latest
+        imagePullPolicy: IfNotPresent
+        # Resource can be managed by setting the following resource config.
+        #resources:
+        #  requests:
+        #    cpu: "1"
+        #    memory: "1Gi"
+        #  limits:
+        #    # cpu: "" no cpu limit to avoid CFS scheduler limits see https://pekko.apache.org/docs/pekko/current/additional/deploy.html#in-kubernetes
+        #    memory: "4Gi"
+        volumeMounts:
+          - name: ditto-log-files-directory
+            mountPath: /var/log/ditto
+        ports:
+        - name: remoting
+          containerPort: 2551
+          protocol: TCP
+        - name: management
+          containerPort: 7626
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            port: management
+            path: /ready
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            port: management
+            path: /alive
+          initialDelaySeconds: 180
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 4
+        env:
+        - name: INSTANCE_INDEX
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: DISCOVERY_METHOD
+          value: "kubernetes-api"
+        - name: TZ
+          value: "Europe/Berlin"
+        - name: JAVA_TOOL_OPTIONS
+          value: "-XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError -XX:+UseContainerSupport -XX:+UseStringDeduplication -Xss512k -XX:MaxRAMPercentage=50 -XX:+UseG1GC -XX:MaxGCPauseMillis=150 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=60s -Dpekko.cluster.failure-detector.threshold=15.0 -Dpekko.cluster.failure-detector.expected-response-after=10s -Dpekko.cluster.failure-detector.acceptable-heartbeat-pause=30s"
+        - name: MONGO_DB_HOSTNAME
+          value: "mongodb"
+        # in order to read the MONGO_DB_URI from a kubernetes secret replace the above lines for MONGO_DB_HOSTNAME with the following ones
+        #- name: MONGO_DB_URI
+        #  valueFrom:
+        #    secretKeyRef:
+        #      name: mongodb
+        #      key: mongodb-uri
+        ### -
+        # in order to write logs into a file you can enable this by setting the following env variable
+        # the log file(s) can be found in /var/log/ditto directory on the host machine
+        #- name: DITTO_LOGGING_FILE_APPENDER
+        #  value: "true"
+      volumes:
+        - name: ditto-log-files-directory
+          hostPath:
+            path: /var/log/ditto
+            type: DirectoryOrCreate
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: things-search
+  labels:
+    app: things-search
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  minReadySeconds: 30
+  selector:
+    matchLabels:
+      app: things-search
+  template:
+    metadata:
+      labels:
+        app: things-search
+        actorSystemName: ditto-cluster
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: things-search
+        image: docker.io/eclipse/ditto-things-search:latest
+        imagePullPolicy: IfNotPresent
+        # Resource can be managed by setting the following resource config.
+        #resources:
+        #  requests:
+        #    cpu: "1"
+        #    memory: "512Mi"
+        #  limits:
+        #    # cpu: "" no cpu limit to avoid CFS scheduler limits see https://pekko.apache.org/docs/pekko/current/additional/deploy.html#in-kubernetes
+        #    memory: "2Gi"
+        volumeMounts:
+          - name: ditto-log-files-directory
+            mountPath: /var/log/ditto
+        ports:
+        - name: remoting
+          containerPort: 2551
+          protocol: TCP
+        - name: management
+          containerPort: 7626
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            port: management
+            path: /ready
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            port: management
+            path: /alive
+          initialDelaySeconds: 180
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 4
+        env:
+        - name: INSTANCE_INDEX
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: DISCOVERY_METHOD
+          value: "kubernetes-api"
+        - name: TZ
+          value: "Europe/Berlin"
+        - name: JAVA_TOOL_OPTIONS
+          value: "-XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError -XX:+UseContainerSupport -XX:+UseStringDeduplication -Xss512k -XX:MaxRAMPercentage=50 -XX:+UseG1GC -XX:MaxGCPauseMillis=150 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=60s -Dpekko.cluster.failure-detector.threshold=15.0 -Dpekko.cluster.failure-detector.expected-response-after=10s -Dpekko.cluster.failure-detector.acceptable-heartbeat-pause=30s"
+        - name: MONGO_DB_HOSTNAME
+          value: "mongodb"
+        # in order to read the MONGO_DB_URI from a kubernetes secret replace the above lines for MONGO_DB_HOSTNAME with the following ones
+        #- name: MONGO_DB_URI
+        #  valueFrom:
+        #    secretKeyRef:
+        #      name: mongodb
+        #      key: mongodb-uri
+        ### -
+        # in order to write logs into a file you can enable this by setting the following env variable
+        # the log file(s) can be found in /var/log/ditto directory on the host machine
+        #- name: DITTO_LOGGING_FILE_APPENDER
+        #  value: "true"
+      volumes:
+        - name: ditto-log-files-directory
+          hostPath:
+            path: /var/log/ditto
+            type: DirectoryOrCreate
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: policies
+  labels:
+    app: policies
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  minReadySeconds: 30
+  selector:
+    matchLabels:
+      app: policies
+  template:
+    metadata:
+      labels:
+        app: policies
+        actorSystemName: ditto-cluster
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: policies
+        image: docker.io/eclipse/ditto-policies:latest
+        imagePullPolicy: IfNotPresent
+        # Resource can be managed by setting the following resource config.
+        #resources:
+        #  requests:
+        #    cpu: "1"
+        #    memory: "1Gi"
+        #  limits:
+        #    # cpu: "" no cpu limit to avoid CFS scheduler limits see https://pekko.apache.org/docs/pekko/current/additional/deploying.html#deploying-to-kubernetes
+        #    memory: "2Gi"
+        volumeMounts:
+          - name: ditto-log-files-directory
+            mountPath: /var/log/ditto
+        ports:
+        - name: remoting
+          containerPort: 2551
+          protocol: TCP
+        - name: management
+          containerPort: 7626
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            port: management
+            path: /ready
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            port: management
+            path: /alive
+          initialDelaySeconds: 180
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 4
+        env:
+        - name: INSTANCE_INDEX
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: DISCOVERY_METHOD
+          value: "kubernetes-api"
+        - name: TZ
+          value: "Europe/Berlin"
+        - name: JAVA_TOOL_OPTIONS
+          value: "-XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError -XX:+UseContainerSupport -XX:+UseStringDeduplication -Xss512k -XX:MaxRAMPercentage=50 -XX:+UseG1GC -XX:MaxGCPauseMillis=150 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=60s -Dpekko.cluster.failure-detector.threshold=15.0 -Dpekko.cluster.failure-detector.expected-response-after=10s -Dpekko.cluster.failure-detector.acceptable-heartbeat-pause=30s"
+        - name: MONGO_DB_HOSTNAME
+          value: "mongodb"
+        # in order to read the MONGO_DB_URI from a kubernetes secret replace the above lines for MONGO_DB_HOSTNAME with the following ones
+        #- name: MONGO_DB_URI
+        #  valueFrom:
+        #    secretKeyRef:
+        #      name: mongodb
+        #      key: mongodb-uri
+        # in order to write logs into a file you can enable this by setting the following env variable
+        # the log file(s) can be found in /var/log/ditto directory on the host machine
+        #- name: DITTO_LOGGING_FILE_APPENDER
+        #  value: "true"
+      volumes:
+        - name: ditto-log-files-directory
+          hostPath:
+            path: /var/log/ditto
+            type: DirectoryOrCreate
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  labels:
+    app: gateway
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  minReadySeconds: 30
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+        actorSystemName: ditto-cluster
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: gateway
+        image: docker.io/eclipse/ditto-gateway:latest
+        imagePullPolicy: IfNotPresent
+        # Resource can be managed by setting the following resource config.
+        #resources:
+        #  requests:
+        #   cpu: "1"
+        #   memory: "512Mi"
+        #  limits:
+        #    # cpu: "{{ item.cpus }}" no cpu limit to avoid CFS scheduler limits see https://pekko.apache.org/docs/pekko/current/additional/deploying.html#deploying-to-kubernetes
+        #    memory: "2Gi"
+        volumeMounts:
+          - name: ditto-log-files-directory
+            mountPath: /var/log/ditto
+        ports:
+        - name: remoting
+          containerPort: 2551
+          protocol: TCP
+        - name: management
+          containerPort: 7626
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            port: management
+            path: /ready
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            port: management
+            path: /alive
+          initialDelaySeconds: 180
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 4
+        env:
+        - name: ENABLE_PRE_AUTHENTICATION
+          value: "true"
+        - name: INSTANCE_INDEX
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: DISCOVERY_METHOD
+          value: "kubernetes-api"
+        - name: TZ
+          value: "Europe/Berlin"
+        - name: JAVA_TOOL_OPTIONS
+          value: "-XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError -XX:+UseContainerSupport -XX:+UseStringDeduplication -Xss512k -XX:MaxRAMPercentage=50 -XX:+UseG1GC -XX:MaxGCPauseMillis=150 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=60s -Dpekko.cluster.failure-detector.threshold=15.0 -Dpekko.cluster.failure-detector.expected-response-after=10s -Dpekko.cluster.failure-detector.acceptable-heartbeat-pause=30s"
+        # in order to write logs into a file you can enable this by setting the following env variable
+        # the log file(s) can be found in /var/log/ditto directory on the host machine
+        #- name: DITTO_LOGGING_FILE_APPENDER
+        #  value: "true"
+      volumes:
+        - name: ditto-log-files-directory
+          hostPath:
+            path: /var/log/ditto
+            type: DirectoryOrCreate
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+spec:
+  clusterIP: None
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    app: gateway

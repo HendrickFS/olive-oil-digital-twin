@@ -1,0 +1,378 @@
+---
+# Note:
+# According to the used k8s namespace the pod-reader-role have to be created in the same namespace.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connectivity
+  labels:
+    app: connectivity
+spec:
+  selector:
+    matchLabels:
+      app: connectivity
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: connectivity
+        actorSystemName: ditto-cluster
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: connectivity
+        image: docker.io/eclipse/ditto-connectivity:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: remoting
+          containerPort: 2551
+          protocol: TCP
+        - name: management
+          containerPort: 7626
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            port: management
+            path: /ready
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            port: management
+            path: /alive
+          initialDelaySeconds: 180
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 4
+        resources:
+          requests:
+            memory: "512Mi"
+          limits:
+            # cpu: "" no cpu limit to avoid CFS scheduler limits see https://pekko.apache.org/docs/pekko/current/additional/deploying.html#in-kubernetes
+            memory: "512Mi"
+        env:
+        - name: INSTANCE_INDEX
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: DISCOVERY_METHOD
+          value: "kubernetes-api"
+          # namespace in which the Ditto service is running according to this the pod-reader-role have to be created in the same namespace
+        - name: TZ
+          value: "Europe/Berlin"
+        - name: JAVA_TOOL_OPTIONS
+          value: "-XX:+ExitOnOutOfMemoryError -Xtune:virtualized -Xss512k -XX:MaxRAMPercentage=80 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=120s -Dpekko.cluster.distributed-data.durable.lmdb.dir=/var/tmp/ddata"
+        - name: MONGO_DB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-uri
+              key: mongodb-uri
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: things
+  labels:
+    app: things
+spec:
+  selector:
+    matchLabels:
+      app: things
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: things
+        actorSystemName: ditto-cluster
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: things
+        image: docker.io/eclipse/ditto-things:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: remoting
+          containerPort: 2551
+          protocol: TCP
+        - name: management
+          containerPort: 7626
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            port: management
+            path: /ready
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            port: management
+            path: /alive
+          initialDelaySeconds: 180
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 4
+        resources:
+          requests:
+            memory: "512Mi"
+          limits:
+            # cpu: "" no cpu limit to avoid CFS scheduler limits see https://pekko.apache.org/docs/pekko/current/additional/deploying.html#in-kubernetes
+            memory: "512Mi"
+        env:
+        - name: INSTANCE_INDEX
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: DISCOVERY_METHOD
+          value: "kubernetes-api"
+          # namespace in which the Ditto service is running according to this the pod-reader-role have to be created in the same namespace
+        - name: TZ
+          value: "Europe/Berlin"
+        - name: JAVA_TOOL_OPTIONS
+          value: "-XX:+ExitOnOutOfMemoryError -XX:+UseContainerSupport -XX:+UseStringDeduplication -Xss512k -XX:MaxRAMPercentage=75 -XX:+UseG1GC -XX:MaxGCPauseMillis=150 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=60s -Dpekko.cluster.failure-detector.threshold=15.0 -Dpekko.cluster.failure-detector.expected-response-after=3s -Dpekko.cluster.failure-detector.acceptable-heartbeat-pause=7s"
+        - name: MONGO_DB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-uri
+              key: mongodb-uri
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: things-search
+  labels:
+    app: things-search
+spec:
+  selector:
+    matchLabels:
+      app: things-search
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: things-search
+        actorSystemName: ditto-cluster
+    spec:
+      containers:
+      - name: things-search
+        image: docker.io/eclipse/ditto-things-search:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: remoting
+          containerPort: 2551
+          protocol: TCP
+        - name: management
+          containerPort: 7626
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            port: management
+            path: /ready
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            port: management
+            path: /alive
+          initialDelaySeconds: 180
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 4
+        resources:
+          requests:
+            memory: "512Mi"
+          limits:
+            # cpu: "" no cpu limit to avoid CFS scheduler limits see https://pekko.apache.org/docs/pekko/current/additional/deploying.html#in-kubernetes
+            memory: "512Mi"
+        env:
+        - name: INSTANCE_INDEX
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: DISCOVERY_METHOD
+          value: "kubernetes-api"
+        - name: TZ
+          value: "Europe/Berlin"
+        - name: JAVA_TOOL_OPTIONS
+          value: "-XX:+ExitOnOutOfMemoryError -XX:+UseContainerSupport -XX:+UseStringDeduplication -Xss512k -XX:MaxRAMPercentage=75 -XX:+UseG1GC -XX:MaxGCPauseMillis=150 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=60s -Dpekko.cluster.failure-detector.threshold=15.0 -Dpekko.cluster.failure-detector.expected-response-after=3s -Dpekko.cluster.failure-detector.acceptable-heartbeat-pause=7s"
+        - name: MONGO_DB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-uri
+              key: mongodb-uri
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: policies
+  labels:
+    app: policies
+spec:
+  selector:
+    matchLabels:
+      app: policies
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: policies
+        actorSystemName: ditto-cluster
+    spec:
+      containers:
+      - name: policies
+        image: docker.io/eclipse//eclipse-ditto-policies:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: remoting
+          containerPort: 2551
+          protocol: TCP
+        - name: management
+          containerPort: 7626
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            port: management
+            path: /ready
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            port: management
+            path: /alive
+          initialDelaySeconds: 180
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 4
+        resources:
+          requests:
+            memory: "512Mi"
+          limits:
+            # cpu: "" no cpu limit to avoid CFS scheduler limits see https://pekko.apache.org/docs/pekko/current/additional/deploying.html#in-kubernetes
+            memory: "512Mi"
+        env:
+        - name: INSTANCE_INDEX
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: DISCOVERY_METHOD
+          value: "kubernetes-api"
+          # namespace in which the Ditto service is running according to this the pod-reader-role have to be created in the same namespace
+        - name: TZ
+          value: "Europe/Berlin"
+        - name: JAVA_TOOL_OPTIONS
+          value: "-XX:+ExitOnOutOfMemoryError -XX:+UseContainerSupport -XX:+UseStringDeduplication -Xss512k -XX:MaxRAMPercentage=75 -XX:+UseG1GC -XX:MaxGCPauseMillis=150 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=60s -Dpekko.cluster.failure-detector.threshold=15.0 -Dpekko.cluster.failure-detector.expected-response-after=3s -Dpekko.cluster.failure-detector.acceptable-heartbeat-pause=7s"
+        - name: MONGO_DB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-uri
+              key: mongodb-uri
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  labels:
+    app: gateway
+spec:
+  selector:
+    matchLabels:
+      app: gateway
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: gateway
+        actorSystemName: ditto-cluster
+    spec:
+      containers:
+      - name: gateway
+        image: docker.io/eclipse/ditto-gateway:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: remoting
+          containerPort: 2551
+          protocol: TCP
+        - name: management
+          containerPort: 7626
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            port: management
+            path: /ready
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            port: management
+            path: /alive
+          initialDelaySeconds: 180
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 4
+        resources:
+          requests:
+            memory: "512Mi"
+          limits:
+            # cpu: "" no cpu limit to avoid CFS scheduler limits see https://pekko.apache.org/docs/pekko/current/additional/deploy.html#in-kubernetes
+            memory: "512Mi"
+        env:
+          - name: ENABLE_PRE_AUTHENTICATION
+            value: "true"
+        - name: INSTANCE_INDEX
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: DISCOVERY_METHOD
+          value: "kubernetes-api"
+          # namespace in which the Ditto service is running according to this the pod-reader-role have to be created in the same namespace
+        - name: BIND_HOSTNAME
+          value: 0.0.0.0
+        - name: TZ
+          value: "Europe/Berlin"
+        - name: JAVA_TOOL_OPTIONS
+          value: "-XX:+ExitOnOutOfMemoryError -XX:+UseContainerSupport -XX:+UseStringDeduplication -Xss512k -XX:MaxRAMPercentage=75 -XX:+UseG1GC -XX:MaxGCPauseMillis=150 -Dpekko.coordinated-shutdown.exit-jvm=on -Dpekko.cluster.shutdown-after-unsuccessful-join-seed-nodes=60s -Dpekko.cluster.failure-detector.threshold=15.0 -Dpekko.cluster.failure-detector.expected-response-after=3s -Dpekko.cluster.failure-detector.acceptable-heartbeat-pause=7s"
+        - name: DEVOPS_PASSWORD
+          value: "dittoPW1!"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+spec:
+  clusterIP: None
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    app: gateway
