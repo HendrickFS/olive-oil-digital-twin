@@ -271,6 +271,13 @@ services:
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
 
+  xml_forwarder:
+    build:
+      context: ../../../utils/xml_forwarder
+    ports:
+      - "6100:6100"
+    restart: always
+
 
 volumes:
   ditto_log_files:
