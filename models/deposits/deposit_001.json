@@ -4,8 +4,27 @@
     "features": {
         "temperature": {
             "properties": {
-                "value": 25,
-                "unit": "\u00B0C"
+                "value": 25
+            }
+        },
+        "humidity": {
+            "properties": {
+                "value": 50
+            }
+        },
+        "mq": {
+            "properties": {
+                "value": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
             }
         }
     }

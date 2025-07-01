@@ -43,6 +43,28 @@
                     "revoke": []
                 }
             }
+        },
+
+        "DEFAULT": {
+            "subjects": {
+                "{{ request:subjectId }}": {
+                "type": "Ditto user authenticated via nginx"
+                }
+            },
+            "resources": {
+                "policy:/": {
+                "grant": ["READ", "WRITE"],
+                "revoke": []
+                },
+                "thing:/": {
+                "grant": ["READ", "WRITE"],
+                "revoke": []
+                },
+                "message:/": {
+                "grant": ["READ", "WRITE"],
+                "revoke": []
+                }
+            }
         }
     }
 }
