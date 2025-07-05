@@ -1,0 +1,21 @@
+{
+    "thingId": "olive.centrifuges:centrifuge001",
+    "policyId": "olive.default:policy",
+    "features": {
+        "temperature": {
+            "properties": {
+                "value": 25
+            }
+        },
+        "waterTemperature": {
+            "properties": {
+                "value": 25
+            }
+        },
+        "waterFatContent": {
+            "properties": {
+                "value": 50
+            }
+        }
+    }
+}

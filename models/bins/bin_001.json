@@ -1,0 +1,11 @@
+{
+    "thingId": "olive.bins:bin001",
+    "policyId": "olive.default:policy",
+    "features": {
+        "temperature": {
+            "properties": {
+                "value": 25
+            }
+        }
+    }
+}

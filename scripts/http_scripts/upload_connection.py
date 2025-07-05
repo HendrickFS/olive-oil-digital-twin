@@ -3,7 +3,7 @@ import json
 import os
 
 AUTH = ("devops", "foobar")
-CONNECTIONS_DIRECTORY = "./../models/connections"
+CONNECTIONS_DIRECTORY = "./../connections/"
 
 def send_connection(directory):
     for filename in os.listdir(directory):

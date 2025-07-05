@@ -1,0 +1,16 @@
+{
+    "thingId": "olive.decanters:decanter001",
+    "policyId": "olive.default:policy",
+    "features": {
+        "temperature": {
+            "properties": {
+                "value": 25
+            }
+        },
+        "waterQuantity": {
+            "properties": {
+                "value": 1000
+            }
+        }
+    }
+}
