@@ -6,7 +6,7 @@
     "piggybackCommand": {
         "type": "connectivity.commands:createConnection",
         "connection": {
-            "id": "mqtt-connection-source",
+            "id": "mqtt-deposits-source",
             "connectionType": "mqtt",
             "connectionStatus": "open",
             "failoverEnabled": true,

@@ -1,0 +1,34 @@
+{
+    "targetActorSelection": "/system/sharding/connection",
+    "headers": {
+    	"aggregate": false
+    },
+    "piggybackCommand": {
+        "type": "connectivity.commands:createConnection",
+        "connection": {
+            "id": "mqtt-mills-target",
+            "connectionType": "mqtt",
+            "connectionStatus": "open",
+            "failoverEnabled": true,
+            "uri": "tcp://mosquitto:9002",
+            "targets": [{
+                "address": "olive.mills.notifications/{{ thing:id }}",
+                "topics": [
+                    "_/_/things/twin/events",
+                    "_/_/things/live/messages"
+                ],
+                "authorizationContext": ["ditto:observer"],
+                "qos": 0
+            }],
+            "mappingContext": {
+                "mappingEngine": "JavaScript",
+                "options": {
+                    "incomingScript": "function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {return null;}",
+                    "outgoingScript": "function mapFromDittoProtocolMsg(namespace,id,group,channel,criterion,action,path,dittoHeaders,value,status,extra){let textPayload='{\"thingId\": \"'+namespace+':'+id+'\", \"temperature\": '+value.temperature.properties.value+', \"waterQuantity\": '+value.waterQuantity.properties.value+'}';let bytePayload=null;let contentType='text/plain; charset=UTF-8';return Ditto.buildExternalMsg(dittoHeaders,textPayload,bytePayload,contentType);}",
+                    "loadBytebufferJS": "false",
+                    "loadLongJS": "false"
+                }
+            }
+        }
+    }
+}
