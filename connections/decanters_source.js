@@ -42,6 +42,4 @@ function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {
 }
 
 
-function mapFromDittoProtocolMsg(namespace, id, group, channel, criterion, action, path, dittoHeaders, value, status, extra) {
-    return null;
-}
+function mapFromDittoProtocolMsg(namespace, id, group, channel, criterion, action, path, dittoHeaders, value, status, extra) { return null;}
