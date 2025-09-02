@@ -1,15 +1,15 @@
 {
-    "thingId": "olive.mixers:mixer001",
+    "thingId": "olive.mills:mill001",
     "policyId": "olive.default:policy",
     "features": {
         "temperature": {
             "properties": {
-                "value": 25
+                "value": 0
             }
         },
-        "humidity": {
+        "waterQuantity": {
             "properties": {
-                "value": 50
+                "value": 0
             }
         }
     }

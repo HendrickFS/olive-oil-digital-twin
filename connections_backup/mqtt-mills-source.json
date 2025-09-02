@@ -1,0 +1,49 @@
+{
+    "id": "mqtt-mills-source",
+    "name": null,
+    "connectionType": "mqtt",
+    "connectionStatus": "open",
+    "uri": "tcp://mosquitto:1884",
+    "sources": [
+        {
+            "addresses": [
+                "olive.mills/incoming/#"
+            ],
+            "consumerCount": 1,
+            "qos": 0,
+            "authorizationContext": [
+                "nginx:ditto"
+            ],
+            "headerMapping": {},
+            "payloadMapping": [
+                "javascript"
+            ],
+            "replyTarget": {
+                "address": "{{header:reply-to}}",
+                "headerMapping": {},
+                "expectedResponseTypes": [
+                    "response",
+                    "error"
+                ],
+                "enabled": true
+            }
+        }
+    ],
+    "targets": [],
+    "clientCount": 1,
+    "failoverEnabled": true,
+    "validateCertificates": true,
+    "processorPoolSize": 1,
+    "mappingDefinitions": {
+        "javascript": {
+            "mappingEngine": "JavaScript",
+            "options": {
+                "incomingScript": "function mapToDittoProtocolMsg(headers,textPayload,bytePayload,contentType){const jsonString=String.fromCharCode.apply(null,new Uint8Array(bytePayload));const jsonData=JSON.parse(jsonString);const thingId=(jsonData.thingId??'olive.mills:mill001').split(':');const value={};if('temperature'in jsonData){value.temperature={properties:{value:jsonData.temperature}};}if('waterQuantity'in jsonData){value.waterQuantity={properties:{value:jsonData.waterQuantity}};}return Ditto.buildDittoProtocolMsg(thingId[0],thingId[1],'things','twin','commands','modify','/features',headers,value);}",
+                "outgoingScript": "function mapFromDittoProtocolMsg(namespace, id, group, channel, criterion, action, path, dittoHeaders, value, status, extra) {return null;}",
+                "loadBytebufferJS": "false",
+                "loadLongJS": "false"
+            }
+        }
+    },
+    "tags": []
+}

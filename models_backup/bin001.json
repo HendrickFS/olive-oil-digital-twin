@@ -4,7 +4,7 @@
     "features": {
         "temperature": {
             "properties": {
-                "value": 25
+                "value": 0
             }
         }
     }

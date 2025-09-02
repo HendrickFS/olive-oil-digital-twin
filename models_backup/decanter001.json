@@ -1,15 +1,15 @@
 {
-    "thingId": "olive.mills:mill001",
+    "thingId": "olive.decanters:decanter001",
     "policyId": "olive.default:policy",
     "features": {
         "temperature": {
             "properties": {
-                "value": 25
+                "value": 0
             }
         },
         "waterQuantity": {
             "properties": {
-                "value": 1000
+                "value": 0
             }
         }
     }

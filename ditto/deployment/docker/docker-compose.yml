@@ -270,18 +270,27 @@ services:
       - "9002:9002"
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    container_name: mosquitto
+    networks:
+      mqtt-shared:
+      default:
+        aliases:
+          - mosquitto
 
   influxdb:
-    image: quay.io/influxdb/influxdb:2.0.0-beta
+    image: influxdb:2.7
     ports:
-      - "9999:9999"
-
-  xml_forwarder:
-    build:
-      context: ../../../utils/xml_forwarder
-    ports:
-      - "6100:6100"
-    restart: always
+      - "9999:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    container_name: influxdb
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=${DOCKER_INFLUXDB_INIT_MODE}
+      - DOCKER_INFLUXDB_INIT_USERNAME=${DOCKER_INFLUXDB_INIT_USERNAME}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${DOCKER_INFLUXDB_INIT_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${DOCKER_INFLUXDB_INIT_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
 
 
 volumes:
@@ -292,3 +301,8 @@ volumes:
       device: /var/log/ditto
       o: bind,uid=1000,gid=1000
 
+  influxdb_data:
+
+networks:
+  mqtt-shared:
+    external: true

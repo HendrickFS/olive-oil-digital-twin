@@ -5,7 +5,7 @@ import requests
 DITTO_API_URL = "http://localhost:8080/api/2"
 AUTH = ("ditto", "ditto")
 
-MODELS_DIRECTORY = "./../models/deposits"
+MODELS_DIRECTORY = "./../models"
 
 def upload_models(directory):
     for filename in os.listdir(directory):

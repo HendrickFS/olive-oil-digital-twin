@@ -1,0 +1,42 @@
+{
+    "thingId": "olive.centrifuges:centrifuge001",
+    "policyId": "olive.default:policy",
+    "features": {
+        "temperature": {
+            "properties": {
+                "value": 0,
+                "maxValue": 28,
+                "minValue": 16,
+                "unit": "\u00B0C",
+                "timestamp": "2023-10-01T12:00:00.000Z"
+            }
+        },
+        "waterTemperature": {
+            "properties": {
+                "value": 0,
+                "maxValue": 28,
+                "minValue": 16,
+                "unit": "\u00B0C",
+                "timestamp": "2023-10-01T12:00:00.000Z"
+            }
+        },
+        "waterFatContent": {
+            "properties": {
+                "value": 20,
+                "maxValue": 22,
+                "minValue": 16,
+                "unit": "%",
+                "timestamp": "2023-10-01T12:00:00.000Z"
+            }
+        },
+        "inputTemperature": {
+            "properties": {
+                "value": 0,
+                "maxValue": 28,
+                "minValue": 16,
+                "unit": "\u00B0C",
+                "timestamp": "2023-10-01T12:00:00.000Z"
+            }
+        }
+    }
+}

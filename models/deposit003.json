@@ -1,0 +1,40 @@
+{
+    "thingId": "olive.deposits:deposit003",
+    "policyId": "olive.default:policy",
+    "features": {
+        "temperature": {
+            "properties": {
+                "value": 25,
+                "maxValue": 28,
+                "minValue": 16,
+                "unit": "\u00B0C",
+                "timestamp": "2023-10-01T12:00:00Z"
+            }
+        },
+        "humidity": {
+            "properties": {
+                "value": 50,
+                "maxValue": 60,
+                "minValue": 40,
+                "unit": "%",
+                "timestamp": "2023-10-01T12:00:00Z"
+            }
+        },
+        "mq": {
+            "properties": {
+                "value": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "timestamp": "2023-10-01T12:00:00Z"
+            }
+        }
+    }
+}

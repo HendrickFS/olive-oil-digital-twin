@@ -4,7 +4,7 @@ import os
 
 DITTO_API_URL = "http://localhost:8080/api/2"
 AUTH = ("ditto", "ditto")
-POLICY_DIRECTORY = "./../models/policies"
+POLICY_DIRECTORY = "./../policies/"
 
 def send_policy(directory):
     for filename in os.listdir(directory):

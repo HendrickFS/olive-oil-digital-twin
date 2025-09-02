@@ -3,8 +3,10 @@ from http_scripts.upload_policy import upload_policy
 from http_scripts.upload_connection import upload_connections
 
 def main():
+
     upload_policy()
     create_twins()
     upload_connections()
 
-main()
+if __name__ == "__main__":
+    main()

@@ -4,17 +4,17 @@
     "features": {
         "temperature": {
             "properties": {
-                "value": 25
+                "value": 0
             }
         },
         "waterTemperature": {
             "properties": {
-                "value": 25
+                "value": 0
             }
         },
         "waterFatContent": {
             "properties": {
-                "value": 50
+                "value": 0
             }
         }
     }
