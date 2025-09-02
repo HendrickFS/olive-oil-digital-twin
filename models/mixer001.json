@@ -1,5 +1,5 @@
 {
-    "thingId": "olive.mixers:mixer001",
+    "thingId": "olive.production:mixer001",
     "policyId": "olive.default:policy",
     "features": {
         "temperature": {

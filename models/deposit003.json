@@ -1,5 +1,5 @@
 {
-    "thingId": "olive.deposits:deposit003",
+    "thingId": "olive.production:deposit003",
     "policyId": "olive.default:policy",
     "features": {
         "temperature": {
