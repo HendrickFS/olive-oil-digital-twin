@@ -10,17 +10,17 @@ def on_message(client, userdata, msg):
     print(f"Received message: {msg.topic} -> {msg.payload}")
 
 data = {
-    "olive.deposits:deposit001": {
+    "olive.production:deposit001": {
         "temperature": 25,
         "humidity": 5,
         "mq": [5] * 9
     },
-    "olive.deposits:deposit002": {
+    "olive.production:deposit002": {
         "temperature": 25,
         "humidity": 5,
         "mq": [5] * 9
     },
-    "olive.deposits:deposit003": {
+    "olive.production:deposit003": {
         "temperature": 25,
         "humidity": 5,
         "mq": [5] * 9
