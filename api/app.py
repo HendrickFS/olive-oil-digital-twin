@@ -17,7 +17,7 @@ CORS(app, resources={r"/data*": {"origins": "*"}}, supports_credentials=True)
 def get_data():
     thingId = request.args.get("thingId", "")
     feature = request.args.get("feature", "")
-    range_start = request.args.get("range_start", "-12h")
+    range_start = request.args.get("range_start", "-24h")
 
     query = f'from(bucket: "{bucket}") |> range(start: {range_start} ) |> filter(fn: (r) => r["deviceId"] == "{thingId}") |> filter(fn: (r) => r["_field"] == "{feature}")'
     result = query_api.query(query)
