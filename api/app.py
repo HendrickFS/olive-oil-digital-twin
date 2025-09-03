@@ -11,7 +11,7 @@ client = InfluxDBClient(url=url, token=token, org=org)
 query_api = client.query_api()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/data*": {"origins": "*"}}, supports_credentials=True)
 
 @app.route("/data", methods=["GET"])
 def get_data():
