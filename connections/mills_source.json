@@ -6,13 +6,13 @@
     "piggybackCommand": {
         "type": "connectivity.commands:createConnection",
         "connection": {
-            "id": "mqtt-mills-source",
+            "id": "mqtt-mill-source",
             "connectionType": "mqtt",
             "connectionStatus": "open",
             "failoverEnabled": true,
             "uri": "tcp://mosquitto:1884",
             "sources": [{
-                "addresses": ["olive.mills/incoming/#"],
+                "addresses": ["mill/incoming/#"],
                 "authorizationContext": ["nginx:ditto"],
                 "qos": 0,
                 "filters": []
@@ -20,7 +20,8 @@
             "mappingContext": {
                 "mappingEngine": "JavaScript",
                 "options": {
-                    "outgoingScript": "function mapToDittoProtocolMsg(headers,textPayload,bytePayload,contentType){const jsonString=String.fromCharCode.apply(null,new Uint8Array(bytePayload));const jsonData=JSON.parse(jsonString);const thingId=(jsonData.thingId??'olive.mills:mill001').split(':');const features=[{key:'temperature',name:'temperature'},{key:'waterQuantity',name:'waterQuantity'}];const now=new Date().toISOString();const messages=features.filter(f=>f.key in jsonData).flatMap(f=>{const featureValue=jsonData[f.key];return[Ditto.buildDittoProtocolMsg(thingId[0],thingId[1],'things','twin','commands','modify',`/features/${f.name}/properties/value`,headers,featureValue),Ditto.buildDittoProtocolMsg(thingId[0],thingId[1],'things','twin','commands','modify',`/features/${f.name}/properties/timestamp`,headers,now)]});return messages.length===1?messages[0]:messages;}",
+                    "incomingScript": "function mapToDittoProtocolMsg(headers,textPayload,bytePayload,contentType){const jsonString=String.fromCharCode.apply(null,new Uint8Array(bytePayload));const jsonData=JSON.parse(jsonString);const thingId=jsonData.thingId.split(':');const features=[{key:'temperature',name:'temperature'},{key:'waterQuantity',name:'waterQuantity'}];const now=new Date().toISOString();const messages=features.filter(f=>f.key in jsonData).flatMap(f=>{const featureValue=jsonData[f.key];return[Ditto.buildDittoProtocolMsg(thingId[0],thingId[1],'things','twin','commands','modify',`/features/${f.name}/properties/value`,headers,featureValue),Ditto.buildDittoProtocolMsg(thingId[0],thingId[1],'things','twin','commands','modify',`/features/${f.name}/properties/timestamp`,headers,now)]});return messages.length===1?messages[0]:messages;}",
+                    "outgoingScript": "function mapFromDittoProtocolMsg(namespace, id, group, channel, criterion, action, path, dittoHeaders, value, status, extra) {return null;}",
                     "loadBytebufferJS": "false",
                     "loadLongJS": "false"
                 }

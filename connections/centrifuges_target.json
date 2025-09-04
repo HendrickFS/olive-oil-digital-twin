@@ -6,13 +6,13 @@
     "piggybackCommand": {
         "type": "connectivity.commands:createConnection",
         "connection": {
-            "id": "mqtt-centrifuges-target",
+            "id": "mqtt-centrifuge-target",
             "connectionType": "mqtt",
             "connectionStatus": "open",
             "failoverEnabled": true,
             "uri": "tcp://mosquitto:9002",
             "targets": [{
-                "address": "olive.centrifuges.notifications/{{ thing:id }}",
+                "address": "centrifuge.notifications/{{ thing:id }}",
                 "topics": [
                     "_/_/things/twin/events",
                     "_/_/things/live/messages"

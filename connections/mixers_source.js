@@ -1,7 +1,7 @@
 function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {
     const jsonString = String.fromCharCode.apply(null, new Uint8Array(bytePayload));
     const jsonData = JSON.parse(jsonString);
-    const thingId = (jsonData.thingId ?? 'olive.mixers:mixer001').split(':');
+    const thingId = jsonData.thingId.split(':');
     const features = [
         { key: 'temperature', name: 'temperature' },
         { key: 'humidity', name: 'humidity' }

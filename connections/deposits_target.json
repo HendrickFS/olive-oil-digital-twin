@@ -6,13 +6,13 @@
     "piggybackCommand": {
         "type": "connectivity.commands:createConnection",
         "connection": {
-            "id": "mqtt-deposits-target",
+            "id": "mqtt-deposit-target",
             "connectionType": "mqtt",
             "connectionStatus": "open",
             "failoverEnabled": true,
             "uri": "tcp://mosquitto:9002",
             "targets": [{
-                "address": "olive.deposits.notifications/{{ thing:id }}",
+                "address": "deposit.notifications/{{ thing:id }}",
                 "topics": [
                     "_/_/things/twin/events",
                     "_/_/things/live/messages"

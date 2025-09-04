@@ -6,13 +6,13 @@
     "piggybackCommand": {
         "type": "connectivity.commands:createConnection",
         "connection": {
-            "id": "mqtt-decanters-target",
+            "id": "mqtt-decanter-target",
             "connectionType": "mqtt",
             "connectionStatus": "open",
             "failoverEnabled": true,
             "uri": "tcp://mosquitto:9002",
             "targets": [{
-                "address": "olive.decanters.notifications/{{ thing:id }}",
+                "address": "decanter.notifications/{{ thing:id }}",
                 "topics": [
                     "_/_/things/twin/events",
                     "_/_/things/live/messages"

@@ -6,13 +6,13 @@
     "piggybackCommand": {
         "type": "connectivity.commands:createConnection",
         "connection": {
-            "id": "mqtt-mills-target",
+            "id": "mqtt-mill-target",
             "connectionType": "mqtt",
             "connectionStatus": "open",
             "failoverEnabled": true,
             "uri": "tcp://mosquitto:9002",
             "targets": [{
-                "address": "olive.mills.notifications/{{ thing:id }}",
+                "address": "mill.notifications/{{ thing:id }}",
                 "topics": [
                     "_/_/things/twin/events",
                     "_/_/things/live/messages"

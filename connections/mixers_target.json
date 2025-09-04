@@ -6,13 +6,13 @@
     "piggybackCommand": {
         "type": "connectivity.commands:createConnection",
         "connection": {
-            "id": "mqtt-mixers-target",
+            "id": "mqtt-mixer-target",
             "connectionType": "mqtt",
             "connectionStatus": "open",
             "failoverEnabled": true,
             "uri": "tcp://mosquitto:9002",
             "targets": [{
-                "address": "olive.mixers.notifications/{{ thing:id }}",
+                "address": "mixer.notifications/{{ thing:id }}",
                 "topics": [
                     "_/_/things/twin/events",
                     "_/_/things/live/messages"
