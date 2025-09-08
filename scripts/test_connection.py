@@ -52,7 +52,7 @@ try:
         update_data(3, 2, 2)
         for thing_id, values in data.items():
             deposit_id = thing_id.split(":")[1]
-            topic = f"olive.deposits/incoming/{deposit_id}"
+            topic = f"deposit/incoming/{deposit_id}"
             payload = json.dumps({
                 "thingId": thing_id,
                 "temperature": values["temperature"],
