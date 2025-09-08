@@ -4,7 +4,7 @@ import random
 import json
 
 def on_connect(client, userdata, flags, rc):
-    client.subscribe("olive.deposits/incoming/#")
+    client.subscribe("deposit/incoming/#")
 
 def on_message(client, userdata, msg):
     print(f"Received message: {msg.topic} -> {msg.payload}")
