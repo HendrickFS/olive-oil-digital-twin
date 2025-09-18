@@ -4,7 +4,7 @@
     "features": {
         "temperature": {
             "properties": {
-                "value": 30,
+                "value": 20,
                 "maxValue": 28,
                 "minValue": 16,
                 "unit": "\u00B0C",

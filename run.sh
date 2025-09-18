@@ -10,7 +10,7 @@ else
 fi
 
 # Running the Eclipse Ditto docker compose setup
-sudo docker compose -f "ditto/deployment/docker/docker-compose.yml" --env-file ".env" up -d --wait
+sudo docker compose -f "ditto/deployment/docker/docker-compose.yml" --env-file ".influx_env" up -d --wait
 
 # Accessing the InfluxDB connection utility
 cd utils

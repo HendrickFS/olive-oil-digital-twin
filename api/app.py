@@ -2,7 +2,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from influxdb_client import InfluxDBClient
 
-url = "http://193.136.195.37:9999"
+# url = "http://193.136.195.37:9999"
+url = "http://localhost:9999"
 token = "_Jof9SeopipTjXIdeLIoeBmtSK7TX-pLAcxu7oubrpSTuqu9KVgEyMVd4LN2h9amEFYCce1u0EBnmrYC5sU9VQ=="
 org = "SustainOlive"
 bucket = "DigitalTwin"
