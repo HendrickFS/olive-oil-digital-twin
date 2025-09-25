@@ -26,4 +26,5 @@ def create_twins():
     upload_models(MODELS_DIRECTORY)
 
 
-create_twins()
+if __name__ == "__main__":
+    create_twins()

@@ -3,7 +3,7 @@ from flask_cors import CORS
 from influxdb_client import InfluxDBClient
 
 url = "http://193.136.195.37:9999"
-# url = "http://localhost:9999"
+# url = "http://192.168.56.1:9999"
 token = "_Jof9SeopipTjXIdeLIoeBmtSK7TX-pLAcxu7oubrpSTuqu9KVgEyMVd4LN2h9amEFYCce1u0EBnmrYC5sU9VQ=="
 org = "SustainOlive"
 bucket = "DigitalTwin"
@@ -28,7 +28,5 @@ def get_data():
             data.append({"time": record.get_time(), "value": record.get_value()})
     return jsonify(data)
 
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5555, debug=True)
+# if __name__ == "__main__":
+#     app.run(host="0.0.0.0", port=5555, debug=False)

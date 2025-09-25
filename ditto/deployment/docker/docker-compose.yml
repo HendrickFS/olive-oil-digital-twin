@@ -265,6 +265,11 @@ services:
         
   mosquitto:
     image: eclipse-mosquitto:2
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    restart: always
     ports:
       - "1884:1884"
       - "9002:9002"
@@ -277,8 +282,20 @@ services:
         aliases:
           - mosquitto
 
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_pub -h localhost -p 1884 -t 'health/check' -m 'ping' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   influxdb:
     image: influxdb:2.7
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    restart: always
     ports:
       - "9999:8086"
     volumes:
@@ -291,6 +308,15 @@ services:
       - DOCKER_INFLUXDB_INIT_ORG=${DOCKER_INFLUXDB_INIT_ORG}
       - DOCKER_INFLUXDB_INIT_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
+    healthcheck:
+      test: curl -f http://127.0.0.1:8086/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      options:
+        max-size: 50m
 
 
 volumes:
