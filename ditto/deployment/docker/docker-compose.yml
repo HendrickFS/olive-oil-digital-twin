@@ -258,7 +258,7 @@ services:
         max-size: 10m
         
   mosquitto:
-    image: eclipse-mosquitto:2
+    image: eclipse-mosquitto:1.6
     deploy:
       resources:
         limits:
@@ -277,12 +277,6 @@ services:
           - mosquitto
     environment:
       - TZ=Europe/Berlin
-    healthcheck:
-      test: ["CMD", "mosquitto_pub", "-h", "localhost", "-p", "1884", "-t", "test", "-m", "test", "--quiet"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
 
   influxdb:
     image: influxdb:2.7
