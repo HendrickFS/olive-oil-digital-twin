@@ -17,8 +17,8 @@ cd utils
 cd influxdb_connection
 
 # Setting up the InfluxDB connection
-mvn install
-nohup mvn spring-boot:run > logs.txt 2>&1 &
+mvn package -DskipTests
+nohup java -jar target/influxdb-0.0.1-SNAPSHOT.jar > logs.txt 2>&1 &
 
 # Accessing the config scripts
 cd ../..
