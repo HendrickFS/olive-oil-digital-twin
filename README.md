@@ -277,7 +277,7 @@ To customize the system for your environment:
 
 ## 📈 Future Enhancements
 
-- [ ] Web dashboard for real-time monitoring and visualization
+- [X] Web dashboard for real-time monitoring and visualization
 - [ ] Machine learning algorithms for predictive maintenance
 - [ ] Advanced alerting system with email notifications
 - [ ] Historical data analytics and reporting
