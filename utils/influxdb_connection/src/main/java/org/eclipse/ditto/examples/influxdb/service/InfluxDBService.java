@@ -25,7 +25,18 @@ public class InfluxDBService {
   InfluxDBClient client;
 
   public void save(String deviceId, String featureId, Double value) {
-    client.getWriteApi().writePoint(Point.measurement("weather").addField(featureId, value).addTag("deviceId", deviceId));
+    client.getWriteApi().writePoint(
+        Point.measurement("weather").addField(featureId, value).addTag("deviceId", deviceId));
+  }
+
+  public void save(String deviceId, String featureId, String value) {
+    client.getWriteApi().writePoint(
+        Point.measurement("weather").addField(featureId, value).addTag("deviceId", deviceId));
+  }
+
+  public void save(String deviceId, String featureId, Boolean value) {
+    client.getWriteApi().writePoint(
+        Point.measurement("weather").addField(featureId, value).addTag("deviceId", deviceId));
   }
 
 }
