@@ -40,30 +40,8 @@ public class DittoService {
       logger.info("Received features update from device '{}': {}", change.getEntityId(),
           change.getFeatures().toJsonString());
 
-      change.getFeatures().forEach(f -> {
-        try {
-          if (f.getProperty("value").isPresent()) {
-            try {
-              double d = f.getProperty("value").get().asDouble();
-              influxDbService.save(change.getEntityId().toString(), f.getId(), d);
-            } catch (Exception e) {
-              // not a double - try as text
-              try {
-                String s = f.getProperty("value").get().asText();
-                influxDbService.save(change.getEntityId().toString(), f.getId(), s);
-              } catch (Exception e2) {
-                // fallback: save the JSON representation as string
-                influxDbService.save(change.getEntityId().toString(), f.getId(), f.getProperty("value").get().toString());
-              }
-            }
-          } else {
-            // no 'value' property: save entire feature JSON as string
-            influxDbService.save(change.getEntityId().toString(), f.getId(), f.toJsonString());
-          }
-        } catch (Exception ex) {
-          logger.warn("Failed to persist feature '{}' for '{}': {}", f.getId(), change.getEntityId(), ex.getMessage());
-        }
-      });
+      change.getFeatures().forEach(f -> influxDbService.save(change.getEntityId().toString(), f.getId(),
+          f.getProperty("value").get().asDouble()));
     });
   }
 
