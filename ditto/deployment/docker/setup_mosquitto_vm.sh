@@ -105,13 +105,18 @@ if [[ -z "$PASSWORD" ]]; then
   echo
 fi
 
-MOSQUITTO_PASSWD_ARGS=(/mosquitto/config/passwd)
+PASSWD_PATH="/mosquitto/config/passwd"
+MOSQUITTO_PASSWD_ARGS=()
 if $OVERWRITE_PASSWD; then
-  MOSQUITTO_PASSWD_ARGS=( -c /mosquitto/config/passwd )
+  # create (overwrite) and provide password non-interactively
+  MOSQUITTO_PASSWD_ARGS=( -c -b )
+else
+  # add user non-interactively
+  MOSQUITTO_PASSWD_ARGS=( -b )
 fi
 
 echo " - Usando imagem: $DOCKER_IMAGE para gerar passwd"
-docker run --rm -it -v "$BASE_DIR":/mosquitto/config "$DOCKER_IMAGE" mosquitto_passwd ${MOSQUITTO_PASSWD_ARGS[*]} -b /mosquitto/config/passwd "$USERNAME" "$PASSWORD"
+docker run --rm -it -v "$BASE_DIR":/mosquitto/config "$DOCKER_IMAGE" mosquitto_passwd ${MOSQUITTO_PASSWD_ARGS[*]} "$PASSWD_PATH" "$USERNAME" "$PASSWORD"
 
 echo "[4/5] Ajustando permissões do passwd"
 chmod 600 "$PASSWD_FILE" || true
