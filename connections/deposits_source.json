@@ -11,6 +11,11 @@
             "connectionStatus": "open",
             "failoverEnabled": true,
             "uri": "tcp://mosquitto:1884",
+            "credentials": {
+                "type": "plain",
+                "username": "sustainolive",
+                "password": "sustainolive"
+            },
             "sources": [{
                 "addresses": ["deposit/incoming/#"],
                 "authorizationContext": ["nginx:ditto"],

@@ -11,6 +11,11 @@
             "connectionStatus": "open",
             "failoverEnabled": true,
             "uri": "tcp://mosquitto:9002",
+            "credentials": {
+                "type": "plain",
+                "username": "sustainolive",
+                "password": "sustainolive"
+            },
             "targets": [{
                 "address": "deposit.notifications/{{ thing:id }}",
                 "topics": [

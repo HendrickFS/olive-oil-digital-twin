@@ -267,8 +267,13 @@ services:
     ports:
       - "1884:1884"
       - "9002:9002"
+      - "8883:8883"
     volumes:
-      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./passwd:/mosquitto/config/passwd:ro
+      - ./certs:/mosquitto/config/certs:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
     container_name: mosquitto
     networks:
       mqtt-shared:
@@ -317,6 +322,10 @@ volumes:
       o: bind,uid=1000,gid=1000
 
   influxdb_data:
+
+  mosquitto_data:
+
+  mosquitto_log:
 
 networks:
   mqtt-shared:

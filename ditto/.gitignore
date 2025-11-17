@@ -24,3 +24,10 @@ deployment/helm/eclipse-ditto/charts/*
 .factorypath
 ui/node_modules
 ui/dist
+
+# Mosquitto: evitar versionar chaves/credentials gerados para a VM
+/deployment/docker/certs/
+/deployment/docker/passwd
+/deployment/docker/*.srl
+/deployment/docker/*.pem
+/deployment/docker/server.key
