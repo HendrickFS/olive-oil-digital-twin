@@ -195,6 +195,32 @@ Overall example JSON of the MQTT `"specificConfig"`:
     "lastWillMessage": "my last will message"
   },
   "sources": ["..."],
+
+  ### Providing username/password in the URI
+
+  You can also include MQTT credentials directly in the connection URI using the form `tcp://user:password@host:port`. For example:
+
+  ```json
+  {
+    "id": "mqtt-example-connection-123",
+    "connectionType": "mqtt",
+    "connectionStatus": "open",
+    "failoverEnabled": true,
+    "uri": "tcp://sustainolive:sustainolive@test.mosquitto.org:1883",
+    "sources": [ ... ]
+  }
+  ```
+
+  If your username or password contains characters that are not allowed in URIs (such as `@`, `:`, `/`), percent-encode those characters according to RFC 3986. Alternatively, you can provide credentials using the `credentials` object in the connection configuration, e.g.:
+
+  ```json
+  "credentials": {
+    "type": "plain",
+    "username": "sustainolive",
+    "password": "sustainolive"
+  }
+  ```
+
   "targets": ["..."]
 }
 ```

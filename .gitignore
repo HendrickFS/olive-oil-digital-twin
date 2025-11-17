@@ -1,4 +1,4 @@
-# Root .gitignore for digitalTwin repository
+sudo chown -R $(whoami):$(whoami) ditto/deployment/docker# Root .gitignore for digitalTwin repository
 
 # Ignore mosquitto generated secrets in ditto deployment
 /ditto/deployment/docker/certs/

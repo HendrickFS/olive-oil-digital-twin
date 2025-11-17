@@ -10,7 +10,7 @@
             "connectionType": "mqtt",
             "connectionStatus": "open",
             "failoverEnabled": true,
-            "uri": "tcp://mosquitto:9002",
+            "uri": "tcp://sustainolive:sustainolive@mosquitto:9002",
             "credentials": {
                 "type": "plain",
                 "username": "sustainolive",
