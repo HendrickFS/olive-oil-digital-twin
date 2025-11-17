@@ -1,0 +1,15 @@
+# Root .gitignore for digitalTwin repository
+
+# Ignore mosquitto generated secrets in ditto deployment
+/ditto/deployment/docker/certs/
+/ditto/deployment/docker/passwd
+/ditto/deployment/docker/*.srl
+/ditto/deployment/docker/*.pem
+/ditto/deployment/docker/server.key
+
+# Node / build / IDE
+node_modules/
+dist/
+.DS_Store
+.idea/
+.vscode/
