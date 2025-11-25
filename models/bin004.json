@@ -1,0 +1,25 @@
+{
+    "thingId": "olive.production:bin004",
+    "policyId": "olive.default:policy",
+    "features": {
+        "temperature": {
+            "properties": {
+                "value": 20,
+                "maxValue": 28,
+                "minValue": 16,
+                "unit": "\u00B0C",
+                "timestamp": "2023-10-01T12:00:00.000Z"
+            }
+        }
+        ,
+        "state": {
+            "properties": {
+                "value": 0,
+                "minValue": 0,
+                "maxValue": 1,
+                "unit": "",
+                "timestamp": "2025-11-24T00:00:00.000Z"
+            }
+        }
+    }
+}
