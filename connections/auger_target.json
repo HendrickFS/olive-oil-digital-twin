@@ -6,7 +6,7 @@
     "piggybackCommand": {
         "type": "connectivity.commands:createConnection",
         "connection": {
-            "id": "mqtt-mill_load-target",
+            "id": "mqtt-auger-target",
             "connectionType": "mqtt",
             "connectionStatus": "open",
             "failoverEnabled": true,

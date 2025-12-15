@@ -1,5 +1,5 @@
 {
-    "thingId": "olive.production:centrifuge_unload001",
+    "thingId": "olive.production:auger001",
     "policyId": "olive.default:policy",
     "features": {
         "state": {

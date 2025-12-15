@@ -6,7 +6,7 @@
     "piggybackCommand": {
         "type": "connectivity.commands:createConnection",
         "connection": {
-            "id": "mqtt-centrifuge_unload-target",
+            "id": "mqtt-belt-target",
             "connectionType": "mqtt",
             "connectionStatus": "open",
             "failoverEnabled": true,
@@ -18,7 +18,7 @@
             },
             "targets": [
                 {
-                    "address": "centrifuge_unload.notifications/{{ thing:id }}",
+                    "address": "sieve.notifications/{{ thing:id }}",
                     "topics": [
                         "_/_/things/twin/events",
                         "_/_/things/live/messages"

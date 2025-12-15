@@ -6,7 +6,7 @@
     "piggybackCommand": {
         "type": "connectivity.commands:createConnection",
         "connection": {
-            "id": "mqtt-centrifuge_load-source",
+            "id": "mqtt-pump-source",
             "connectionType": "mqtt",
             "connectionStatus": "open",
             "failoverEnabled": true,
@@ -19,7 +19,7 @@
             "sources": [
                 {
                     "addresses": [
-                        "centrifuge_load/incoming/#"
+                        "pump/incoming/#"
                     ],
                     "authorizationContext": [
                         "nginx:ditto"
