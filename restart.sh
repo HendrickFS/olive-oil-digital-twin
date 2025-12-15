@@ -6,8 +6,8 @@ cd utils
 cd influxdb_connection
 
 # Setting up the InfluxDB connection
-mvn install
-nohup mvn spring-boot:run > logs.txt 2>&1 &
+# mvn install
+# nohup mvn spring-boot:run > logs.txt 2>&1 &
 
 
 cd ../..
