@@ -283,6 +283,32 @@ services:
     environment:
       - TZ=Europe/Berlin
 
+  telegraf:
+    image: telegraf:latest
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    restart: always
+    container_name: telegraf
+    depends_on:
+      - mosquitto
+      - influxdb
+    volumes:
+      - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    environment:
+      - INFLUXDB_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
+      - INFLUXDB_ORG=${DOCKER_INFLUXDB_INIT_ORG}
+      - INFLUXDB_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
+      - TZ=Europe/Berlin
+    networks:
+      default:
+        aliases:
+          - telegraf
+    logging:
+      options:
+        max-size: 50m
+
   influxdb:
     image: influxdb:2.7
     deploy:

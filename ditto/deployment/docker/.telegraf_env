@@ -1,0 +1,10 @@
+# Telegraf Environment Variables
+TELEGRAF_INFLUXDB_URL=http://influxdb:8086
+TELEGRAF_INFLUXDB_TOKEN=_Jof9SeopipTjXIdeLIoeBmtSK7TX-pLAcxu7oubrpSTuqu9KVgEyMVd4LN2h9amEFYCce1u0EBnmrYC5sU9VQ==
+TELEGRAF_INFLUXDB_ORG=SustainOlive
+TELEGRAF_INFLUXDB_BUCKET=DigitalTwin
+
+# MQTT Configuration
+MQTT_BROKER=tcp://mosquitto:1884
+MQTT_USERNAME=sustainolive
+MQTT_PASSWORD=sustainolive
