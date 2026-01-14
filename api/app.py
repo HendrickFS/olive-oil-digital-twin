@@ -16,13 +16,19 @@ CORS(app, resources={r"/data*": {"origins": "*"}, r"/ml*": {"origins": "*"}}, su
 
 def _build_query(thing_id: str, feature: str, range_start: str, latest: bool = False, dedup: bool = False) -> str:
     base = f'from(bucket: "{bucket}") |> range(start: {range_start} ) |> filter(fn: (r) => r["thingId"] == "{thing_id}") |> filter(fn: (r) => r["_field"] == "{feature}")'
+    
     if latest:
         return base + " |> last()"
+    
+    # For "state" feature, apply 5-minute aggregation window to reduce data volume
+    if feature == "state":
+        return base + ' |> aggregateWindow(every: 5m, fn: last, createEmpty: false)'
+    
     if dedup:
         # Collapse points that share the exact same timestamp by taking the last written value
         return base + " |> group(columns: [\"_time\", \"thingId\", \"_field\", \"topic\", \"host\"]) |> last() |> sort(columns: [\"_time\"] )"
+    
     return base
-
 
 @app.route("/data", methods=["GET"])
 def get_data():
