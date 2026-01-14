@@ -14,13 +14,25 @@ query_api = client.query_api()
 app = Flask(__name__)
 CORS(app, resources={r"/data*": {"origins": "*"}, r"/ml*": {"origins": "*"}}, supports_credentials=True)
 
+def _build_query(thing_id: str, feature: str, range_start: str, latest: bool = False, dedup: bool = False) -> str:
+    base = f'from(bucket: "{bucket}") |> range(start: {range_start} ) |> filter(fn: (r) => r["thingId"] == "{thing_id}") |> filter(fn: (r) => r["_field"] == "{feature}")'
+    if latest:
+        return base + " |> last()"
+    if dedup:
+        # Collapse points that share the exact same timestamp by taking the last written value
+        return base + " |> group(columns: [\"_time\", \"thingId\", \"_field\", \"topic\", \"host\"]) |> last() |> sort(columns: [\"_time\"] )"
+    return base
+
+
 @app.route("/data", methods=["GET"])
 def get_data():
     thingId = request.args.get("thingId", "")
     feature = request.args.get("feature", "")
     range_start = request.args.get("range_start", "-24h")
+    latest = request.args.get("latest", "false").lower() in {"true", "1", "yes"}
+    dedup = request.args.get("dedup", "false").lower() in {"true", "1", "yes"}
 
-    query = f'from(bucket: "{bucket}") |> range(start: {range_start} ) |> filter(fn: (r) => r["deviceId"] == "{thingId}") |> filter(fn: (r) => r["_field"] == "{feature}")'
+    query = _build_query(thingId, feature, range_start, latest, dedup)
     result = query_api.query(query)
     data = []
     for table in result:
@@ -39,9 +51,11 @@ def check_anomaly():
     thingId = request.args.get("thingId", "")
     feature = request.args.get("feature", "")
     range_start = request.args.get("range_start", "-1h")
+    latest = request.args.get("latest", "false").lower() in {"true", "1", "yes"}
+    dedup = request.args.get("dedup", "false").lower() in {"true", "1", "yes"}
     
     # Get data using same logic as /data endpoint
-    query = f'from(bucket: "{bucket}") |> range(start: {range_start} ) |> filter(fn: (r) => r["deviceId"] == "{thingId}") |> filter(fn: (r) => r["_field"] == "{feature}")'
+    query = _build_query(thingId, feature, range_start, latest, dedup)
     result = query_api.query(query)
     data = []
     for table in result:
@@ -66,9 +80,11 @@ def get_stats():
     thingId = request.args.get("thingId", "")
     feature = request.args.get("feature", "")
     range_start = request.args.get("range_start", "-24h")
+    latest = request.args.get("latest", "false").lower() in {"true", "1", "yes"}
+    dedup = request.args.get("dedup", "false").lower() in {"true", "1", "yes"}
     
     # Get data
-    query = f'from(bucket: "{bucket}") |> range(start: {range_start} ) |> filter(fn: (r) => r["deviceId"] == "{thingId}") |> filter(fn: (r) => r["_field"] == "{feature}")'
+    query = _build_query(thingId, feature, range_start, latest, dedup)
     result = query_api.query(query)
     values = []
     for table in result:
