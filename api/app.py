@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from influxdb_client import InfluxDBClient
+import numpy as np
+from ml.anomaly_detection import AnomalyDetector
 
 url = "http://193.136.195.37:9999"
 # url = "http://192.168.56.1:9999"
@@ -57,28 +59,94 @@ def check_anomaly():
     thingId = request.args.get("thingId", "")
     feature = request.args.get("feature", "")
     range_start = request.args.get("range_start", "-1h")
+    training_range = request.args.get("training_range", "-24h")
     latest = request.args.get("latest", "false").lower() in {"true", "1", "yes"}
     dedup = request.args.get("dedup", "false").lower() in {"true", "1", "yes"}
     
-    # Get data using same logic as /data endpoint
-    query = _build_query(thingId, feature, range_start, latest, dedup)
-    result = query_api.query(query)
-    data = []
-    for table in result:
-        for record in table.records:
-            data.append({"time": record.get_time(), "value": record.get_value()})
+    if not thingId or not feature:
+        return jsonify({"error": "thingId and feature parameters required"}), 400
     
-    # TODO: Add your anomaly detection logic here
-    # For now, just return basic info
-    response = {
-        "device": thingId,
-        "feature": feature,
-        "data_points": len(data),
-        "anomaly_detected": False,
-        "message": "Anomaly detection not implemented yet"
-    }
+    try:
+        # Step 1: Fetch historical training data
+        training_query = _build_query(thingId, feature, training_range, latest=False, dedup=dedup)
+        training_result = query_api.query(training_query)
+        training_values = []
+        for table in training_result:
+            for record in table.records:
+                val = record.get_value()
+                if isinstance(val, (int, float)):
+                    training_values.append(val)
+        
+        if len(training_values) < 10:
+            return jsonify({
+                "error": "Insufficient training data (need at least 10 points)",
+                "available_points": len(training_values)
+            }), 400
+        
+        # Step 2: Train Isolation Forest on historical data
+        cache_key = f"{thingId}_{feature}"
+        detector = AnomalyDetector(contamination=0.1)
+        detector.fit(training_values, cache_key)
+        
+        # Step 3: Fetch prediction data in requested range
+        prediction_query = _build_query(thingId, feature, range_start, latest=latest, dedup=dedup)
+        prediction_result = query_api.query(prediction_query)
+        
+        # Collect data points with timestamps
+        data_points = []
+        for table in prediction_result:
+            for record in table.records:
+                val = record.get_value()
+                if isinstance(val, (int, float)):
+                    data_points.append({
+                        "time": record.get_time(),
+                        "value": val
+                    })
+        
+        if not data_points:
+            return jsonify({
+                "device": thingId,
+                "feature": feature,
+                "data_points": 0,
+                "anomalies": [],
+                "message": "No data found in requested range"
+            }), 200
+        
+        # Step 4: Get predictions and anomaly scores
+        values = [pt["value"] for pt in data_points]
+        predictions = detector.predict(values)
+        scores = detector.predict_proba(values)
+        
+        # Build response with anomaly information
+        anomalies = []
+        for i, point in enumerate(data_points):
+            is_anomaly = predictions[i] == -1
+            anomaly_score = scores[i]
+            
+            anomalies.append({
+                "time": point["time"],
+                "value": point["value"],
+                "anomaly": is_anomaly,
+                "score": float(anomaly_score)  # Lower score = more anomalous
+            })
+        
+        # Count anomalies
+        anomaly_count = sum(1 for a in anomalies if a["anomaly"])
+        
+        response = {
+            "device": thingId,
+            "feature": feature,
+            "training_points": len(training_values),
+            "prediction_points": len(data_points),
+            "anomalies_detected": anomaly_count,
+            "anomaly_percentage": round(100 * anomaly_count / len(data_points), 2) if data_points else 0,
+            "data": anomalies
+        }
+        
+        return jsonify(response)
     
-    return jsonify(response)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/ml/stats", methods=["GET"])
 def get_stats():

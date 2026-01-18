@@ -2,3 +2,6 @@ flask
 flask-cors
 influxdb-client
 gunicorn
+scikit-learn
+pandas
+numpy
