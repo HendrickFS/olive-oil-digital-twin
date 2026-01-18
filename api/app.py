@@ -67,7 +67,6 @@ def ml_health():
 @app.route("/ml/anomaly", methods=["GET"])
 def check_anomaly():
     """Check for anomalies in sensor data"""
-    logger.info("=== /ml/anomaly endpoint called ===")
     thingId = request.args.get("thingId", "")
     feature = request.args.get("feature", "")
     range_start = request.args.get("range_start", "-1h")
@@ -75,16 +74,12 @@ def check_anomaly():
     latest = request.args.get("latest", "false").lower() in {"true", "1", "yes"}
     dedup = request.args.get("dedup", "false").lower() in {"true", "1", "yes"}
     
-    logger.info(f"Parameters: thingId={thingId}, feature={feature}, range_start={range_start}, training_range={training_range}")
-    
     if not thingId or not feature:
         return jsonify({"error": "thingId and feature parameters required"}), 400
     
     try:
-        # Step 1: Fetch historical training data
-        logger.info(f"Fetching training data with range: {training_range}")
-        training_query = _build_query(thingId, feature, training_range, latest=False, dedup=dedup)
-        logger.info(f"Training query: {training_query}")
+        # Step 1: Fetch historical training data (never use dedup for training)
+        training_query = _build_query(thingId, feature, training_range, latest=False, dedup=False)
         training_result = query_api.query(training_query)
         training_values = []
         for table in training_result:
@@ -92,6 +87,8 @@ def check_anomaly():
                 val = record.get_value()
                 if isinstance(val, (int, float)):
                     training_values.append(val)
+        
+        logger.info(f"Training data collected: {len(training_values)} points")
         
         if len(training_values) < 10:
             return jsonify({
