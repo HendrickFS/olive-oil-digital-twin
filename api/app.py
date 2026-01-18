@@ -80,11 +80,18 @@ def check_anomaly():
     try:
         # Step 1: Fetch historical training data (never use dedup for training)
         training_query = _build_query(thingId, feature, training_range, latest=False, dedup=False)
+        logger.info(f"Executing training query: {training_query}")
         training_result = query_api.query(training_query)
+        
+        # Debug: log raw results
+        logger.info(f"Query returned {len(training_result)} tables")
+        
         training_values = []
-        for table in training_result:
-            for record in table.records:
+        for table_idx, table in enumerate(training_result):
+            logger.info(f"Table {table_idx}: {len(table.records)} records")
+            for record_idx, record in enumerate(table.records):
                 val = record.get_value()
+                logger.info(f"  Record {record_idx}: value={val}, type={type(val)}")
                 if isinstance(val, (int, float)):
                     training_values.append(val)
         
