@@ -144,9 +144,9 @@ def check_anomaly():
             anomaly_score = scores[i]
             
             anomalies.append({
-                "time": point["time"],
-                "value": point["value"],
-                "anomaly": is_anomaly,
+                "time": str(point["time"]),
+                "value": float(point["value"]),
+                "anomaly": bool(is_anomaly),
                 "score": float(anomaly_score)  # Lower score = more anomalous
             })
         
@@ -156,10 +156,10 @@ def check_anomaly():
         response = {
             "device": thingId,
             "feature": feature,
-            "training_points": len(training_values),
-            "prediction_points": len(data_points),
-            "anomalies_detected": anomaly_count,
-            "anomaly_percentage": round(100 * anomaly_count / len(data_points), 2) if data_points else 0,
+            "training_points": int(len(training_values)),
+            "prediction_points": int(len(data_points)),
+            "anomalies_detected": int(anomaly_count),
+            "anomaly_percentage": float(round(100 * anomaly_count / len(data_points), 2) if data_points else 0),
             "data": anomalies
         }
         
