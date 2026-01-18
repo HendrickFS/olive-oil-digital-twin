@@ -2,6 +2,12 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from influxdb_client import InfluxDBClient
 import numpy as np
+import sys
+import os
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from ml.anomaly_detection import AnomalyDetector
 
 url = "http://193.136.195.37:9999"
@@ -146,7 +152,10 @@ def check_anomaly():
         return jsonify(response)
     
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        print(f"Error in /ml/anomaly: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({"error": str(e), "type": type(e).__name__}), 500
 
 @app.route("/ml/stats", methods=["GET"])
 def get_stats():
