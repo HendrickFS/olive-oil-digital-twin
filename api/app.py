@@ -4,6 +4,11 @@ from influxdb_client import InfluxDBClient
 import numpy as np
 import sys
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -153,9 +158,11 @@ def check_anomaly():
     
     except Exception as e:
         import traceback
-        print(f"Error in /ml/anomaly: {str(e)}")
-        print(traceback.format_exc())
-        return jsonify({"error": str(e), "type": type(e).__name__}), 500
+        error_msg = str(e)
+        error_trace = traceback.format_exc()
+        logger.error(f"Error in /ml/anomaly: {error_msg}")
+        logger.error(error_trace)
+        return jsonify({"error": error_msg, "type": type(e).__name__}), 500
 
 @app.route("/ml/stats", methods=["GET"])
 def get_stats():
