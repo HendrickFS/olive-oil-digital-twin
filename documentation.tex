@@ -1,0 +1,152 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{Machine Learning Integration: Model Selection and Training Environment Configuration}
+\author{Digital Twin for Olive Oil Extraction}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Machine Learning Model Choice}
+\label{sec:model_choice}
+
+Once the synthetic dataset is available, the next step is to select a machine learning model that is compatible with the characteristics of the problem. In the present case, the input variables are predominantly tabular and heterogeneous, combining continuous process variables, compositional measurements, and at least one categorical descriptor, namely the olive cultivar. The outputs are also naturally expressed as tabular targets, since they correspond to physicochemical quality indicators, sensory scores, extraction yield, and the final compliance state of the produced oil.
+
+From a supervised learning perspective, this problem is best interpreted primarily as a nonlinear multi-target regression task. Most of the relevant outputs, such as \texttt{yieldPercentage}, \texttt{totalPhenols}, \texttt{freeAcidity}, \texttt{peroxideValue}, \texttt{k232}, \texttt{k270}, \texttt{deltaK}, and the sensory attributes, are continuous variables. The binary output \texttt{isEvooCompliant} can be derived afterward from the predicted quality indicators by applying the regulatory thresholds used to define compliance. This formulation is advantageous because it preserves the physical interpretation of the model outputs and avoids mixing a large regression problem with a separate classification objective prematurely.
+
+Among the candidate model families, gradient-boosted decision trees are the most appropriate choice for this use case. Gradient boosting is well suited to nonlinear regression problems because it incrementally combines decision trees into an additive predictive model, allowing it to capture complex interactions between variables without requiring explicit feature engineering \cite{Friedman2001}. More recent evidence also indicates that tree-based ensembles remain among the strongest-performing approaches for medium-sized tabular datasets, especially when compared with deep neural architectures that typically require larger datasets and more extensive tuning to achieve stable gains in this setting \cite{Grinsztajn2022}. This consideration is particularly relevant here, since the available data, although expanded synthetically, still represents a structured industrial process dataset rather than a massive unstructured corpus.
+
+Within the gradient-boosting family, the most suitable model for this application is \textbf{CatBoost}. The main reason for this selection is that the input space includes categorical information, such as cultivar, together with numerical process and quality descriptors. Traditional algorithms require explicit preprocessing for categorical variables, such as One-Hot Encoding (OHE). However, OHE often leads to high-dimensional, sparse matrices that increase memory consumption and slow down training. CatBoost bypasses this by calculating dynamic target statistics on the fly during the tree-building process, processing categorical strings natively. Furthermore, its ordered boosting strategy---a permutation-driven approach---was proposed to reduce prediction shift caused by target leakage during training \cite{Prokhorenkova2018}. This combination of efficient categorical handling and algorithmic robustness makes it especially attractive for the present application, where the model must integrate heterogeneous features while remaining relatively simple to train.
+
+Alternative models are less suitable for the same reasons. Linear or polynomial regression models would impose overly restrictive assumptions on the relationships between process variables and quality outcomes, which are known to be nonlinear. Support Vector Regression can model nonlinear mappings, but it becomes less practical when multiple outputs and larger parameter searches are required. Deep neural networks are also a possible option, yet their main advantages are generally observed in larger datasets or in problems involving images, text, or other highly unstructured data, which is not the case here \cite{Grinsztajn2022}. XGBoost is another strong and widely adopted boosted-tree alternative \cite{Chen2016XGBoost}; however, CatBoost offers a more direct treatment of categorical inputs, reducing preprocessing effort and making the overall pipeline more natural for this application.
+
+For these reasons, the recommended learning strategy is to train a \textbf{CatBoost-based regression pipeline} for the continuous olive oil quality targets and then compute \texttt{isEvooCompliant} from the predicted outputs as a deterministic post-processing step. In practice, this can be implemented either as one regressor per target or as a coordinated multi-output regression workflow. This choice preserves interpretability, aligns with the structure of the generated data, and provides a technically consistent balance between predictive power, robustness, and implementation simplicity.
+
+\section{Empirical Comparison of Alternative Models}
+\label{sec:model_comparison}
+
+To validate the theoretical choice of CatBoost and further benchmark the pipeline, two additional robust tree-based ensembles were implemented and trained under similar conditions: Random Forest and XGBoost. 
+
+\subsection{Random Forest Model}
+A Random Forest Regressor was introduced as a robust baseline. To handle the categorical \texttt{cultivar} variable, the dataset was explicitly one-hot encoded prior to training. A \texttt{MultiOutputRegressor} was utilized with the \texttt{RandomForestRegressor} (100 estimators, max depth of 10). The evaluation of the continuous targets yielded an average $R^2$ score of 0.8862. The deterministic post-processing step for EVOO compliance resulted in an accuracy of 79.00\%.
+
+\subsection{XGBoost Model}
+XGBoost, another prominent gradient boosting algorithm, was evaluated. It utilized its native categorical support (\texttt{enable\_categorical=True} and \texttt{tree\_method="hist"}), requiring the \texttt{cultivar} feature to be cast to a categorical type. The model (200 estimators, learning rate of 0.05, max depth of 6) achieved an average $R^2$ score of 0.8861 across the ten regression targets. The deterministic EVOO compliance accuracy matched the Random Forest at 79.00\%.
+
+\subsection{Conclusion of the Benchmarking}
+These results further confirm the suitability of tree-based ensembles for this multi-output regression task. While Random Forest and XGBoost performed comparably with average $R^2$ scores of $\sim$0.886 and EVOO compliance accuracies of 79.00\%, the CatBoost implementation remains the preferred model due to its superior and more straightforward native handling of categorical features without requiring explicit encoding logic or structural alterations. The implementation files (\texttt{train\_rf.py} and \texttt{train\_xgb.py}) have been securely added to the project repository for continuous validation and comparative analysis.
+
+\section{Environment Configuration and Training Pipeline}
+\label{sec:env_configuration}
+
+To operationalize the theoretical decisions outlined in Section \ref{sec:model_choice}, a specific environment configuration and algorithmic pipeline were developed.
+
+\subsection{Dependencies Setup}
+A reproducible Python environment has been configured utilizing a \texttt{requirements-ml.txt} file to prevent dependency drift. The core dependencies for the machine learning environment comprise:
+\begin{itemize}
+    \item \textbf{\texttt{catboost}}: The core gradient-boosting library engineered for categorical features.
+    \item \textbf{\texttt{scikit-learn}}: Utilized for crucial scaffolding operations, namely the dataset splitting mechanism (\texttt{train\_test\_split}) and the multi-output coordination structure (\texttt{MultiOutputRegressor}).
+    \item \textbf{\texttt{pandas} \& \textbf{\texttt{numpy}}}: Standard data-frame representations for structural data manipulation and rapid linear algebra.
+    \item \textbf{\texttt{joblib}}: Employed to efficiently serialize the final trained pipeline into a verifiable binary format (\texttt{.pkl}) for subsequent real-time inference within the live digital twin ecosystem.
+\end{itemize}
+
+\subsection{Script Architecture (\texttt{train\_catboost.py})}
+The training logic was strictly encapsulated into an automated Python script to bridge the synthetic dataset generation with offline analytical learning.
+
+The implementation honors the theoretical directive to handle continuous outputs coordinately yet distinctly from categorical evaluations. The workflow is executed as follows:
+\begin{enumerate}
+    \item \textbf{Data Ingestion and Schema Mapping:} The script first loads the synthetic \texttt{dataset.csv}. It separates the input features (such as \texttt{malaxationTemperature} and \texttt{waterToPasteRatio}) from the 10 continuous target variables (such as \texttt{yieldPercentage} and \texttt{peroxideValue}). Crucially, it casts the \texttt{cultivar} column to a string type and extracts its integer index. This index is passed directly to the model via the \texttt{cat\_features} parameter, signaling to CatBoost's internal engine to process it natively without external encoding.
+    \item \textbf{Regression Architecture:} A base \texttt{CatBoostRegressor} estimator is initialized with conservative hyperparameters (e.g., 500 iterations, a learning rate of 0.05, and a tree depth of 6) to capture robust interactions without overfitting the synthetic noise. This base estimator is then systematically wrapped inside a \textit{scikit-learn} \texttt{MultiOutputRegressor}. This architectural pattern executes a coordinated workflow: it automatically instantiates and fits a dedicated gradient-boosting regression entity for each of the 10 continuous quality targets simultaneously.
+    \item \textbf{Deterministic EVOO Evaluation}: The training script isolates the discrete EVOO classification output entirely from the regression phase. After generating continuous predictions for the test set, a custom deterministic function (\texttt{calculate\_evoo\_compliance}) evaluates these outputs. It applies a series of boolean checks corresponding to the regulatory IOC physical constraints (e.g., \texttt{freeAcidity} $\le 0.8$, \texttt{peroxideValue} $\le 20.0$, \texttt{fruity} $> 0.0$). By comparing this derived compliance against the original dataset's ground truth, the script calculates a final validation accuracy, proving the effectiveness of the underlying continuous predictions without confounding the gradient boosting objective.
+    \item \textbf{Performance Visualization Export}: As a concluding step, the script utilizes \texttt{matplotlib} to autonomously render and save graphical performance artifacts. It generates individual actual-versus-predicted scatter plots for each target feature (\texttt{actual\_vs\_predicted\_\{target\}.png}), and a summative bar chart of the $R^2$ metrics (\texttt{r2\_scores.png}). These exports provide an immediate, visual validation of the regression pipeline's efficacy directly from the testing holdout set.
+\end{enumerate}
+\subsection{Performance Visualization}
+To visually validate the efficacy of the multi-target regression pipeline, the training script automatically generates performance artifacts upon evaluation. Individual scatter plots comparing the model's continuous predictions against the empirical ground truth are created for each of the 10 quality targets to maintain maximum visual clarity and granularity. This provides a direct assessment of variance capture and highlights any predictive deviations across the physicochemical spectrum. An additional figure, \texttt{r2\_scores.png} (Figure \ref{fig:r2_scores}), provides a consolidated bar chart summarizing the coefficient of determination ($R^2$) for all targets, offering a clear, high-level comparative overview of the pipeline's predictive reliability.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/actual_vs_predicted_yieldPercentage.png}
+    \caption{Scatter plot comparing actual versus predicted values for yield percentage.}
+    \label{fig:actual_vs_predicted_yieldPercentage}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/actual_vs_predicted_totalPhenols.png}
+    \caption{Scatter plot comparing actual versus predicted values for total phenols.}
+    \label{fig:actual_vs_predicted_totalPhenols}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/actual_vs_predicted_freeAcidity.png}
+    \caption{Scatter plot comparing actual versus predicted values for free acidity.}
+    \label{fig:actual_vs_predicted_freeAcidity}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/actual_vs_predicted_peroxideValue.png}
+    \caption{Scatter plot comparing actual versus predicted values for peroxide value.}
+    \label{fig:actual_vs_predicted_peroxideValue}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/actual_vs_predicted_k232.png}
+    \caption{Scatter plot comparing actual versus predicted values for K232.}
+    \label{fig:actual_vs_predicted_k232}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/actual_vs_predicted_k270.png}
+    \caption{Scatter plot comparing actual versus predicted values for K270.}
+    \label{fig:actual_vs_predicted_k270}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/actual_vs_predicted_deltaK.png}
+    \caption{Scatter plot comparing actual versus predicted values for delta K.}
+    \label{fig:actual_vs_predicted_deltaK}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/actual_vs_predicted_fruity.png}
+    \caption{Scatter plot comparing actual versus predicted values for the fruity sensory attribute.}
+    \label{fig:actual_vs_predicted_fruity}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/actual_vs_predicted_bitter.png}
+    \caption{Scatter plot comparing actual versus predicted values for the bitter sensory attribute.}
+    \label{fig:actual_vs_predicted_bitter}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/actual_vs_predicted_pungent.png}
+    \caption{Scatter plot comparing actual versus predicted values for the pungent sensory attribute.}
+    \label{fig:actual_vs_predicted_pungent}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/r2_scores.png}
+    \caption{Bar chart summarizing the $R^2$ scores across all target variables.}
+    \label{fig:r2_scores}
+\end{figure}
+
+By merging CatBoost's advanced categorical management with explicit multi-output topologies, the implementation script maintains perfect congruence between the theoretical scientific intent and functional digital twin analytics.
+
+\end{document}

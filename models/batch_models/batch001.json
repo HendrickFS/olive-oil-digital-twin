@@ -1,0 +1,40 @@
+{
+    "thingId": "olive.batch:batch001",
+    "policyId": "olive.default:policy",
+    "features": {
+        "oliveParameters": {
+            "properties": {
+                "maturationIndex": 0.0,
+                "moistureContent": 0.0,
+                "oilContent": 0.0,
+                "defectIndex": 0.0,
+                "cultivar": ""
+            }
+        },
+        "processParameters": {
+            "properties": {
+                "malaxationTemperature": 0.0,
+                "malaxationTime": 0.0,
+                "waterFlowRate": 0.0,
+                "waterToPasteRatio": 0.0
+            }
+        },
+        "oliveOilQuality": {
+            "properties": {
+                "yieldPercentage": 0.0,
+                "totalPhenols": 0.0,
+                "freeAcidity": 0.0,
+                "peroxideValue": 0.0,
+                "k232": 0.0,
+                "k270": 0.0,
+                "deltaK": 0.0,
+                "sensoryProfile": {
+                    "fruity": 0.0,
+                    "bitter": 0.0,
+                    "pungent": 0.0
+                },
+                "isEvooCompliant": false
+            }
+        }
+    }
+}

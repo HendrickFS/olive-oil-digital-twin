@@ -1,0 +1,39 @@
+{
+    "targetActorSelection": "/system/sharding/connection",
+    "headers": {
+    	"aggregate": false
+    },
+    "piggybackCommand": {
+        "type": "connectivity.commands:createConnection",
+        "connection": {
+            "id": "mqtt-batch-target",
+            "connectionType": "mqtt",
+            "connectionStatus": "open",
+            "failoverEnabled": true,
+            "uri": "tcp://sustainolive:sustainolive@mosquitto:9002",
+            "credentials": {
+                "type": "plain",
+                "username": "sustainolive",
+                "password": "sustainolive"
+            },
+            "targets": [{
+                "address": "batch.notifications/{{ thing:id }}",
+                "topics": [
+                    "_/_/things/twin/events",
+                    "_/_/things/live/messages"
+                ],
+                "authorizationContext": ["ditto:observer"],
+                "qos": 0
+            }],
+            "mappingContext": {
+                "mappingEngine": "JavaScript",
+                "options": {
+                    "incomingScript": "function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {return null;}",
+                    "outgoingScript": "function mapFromDittoProtocolMsg(namespace,id,group,channel,criterion,action,path,dittoHeaders,value,status,extra){let payload={thingId:namespace+':'+id,oliveParameters:value.oliveParameters?value.oliveParameters.properties:{},processParameters:value.processParameters?value.processParameters.properties:{},oliveOilQuality:value.oliveOilQuality?value.oliveOilQuality.properties:{}};let textPayload=JSON.stringify(payload);let bytePayload=null;let contentType='application/json; charset=UTF-8';return Ditto.buildExternalMsg(dittoHeaders,textPayload,bytePayload,contentType);}",
+                    "loadBytebufferJS": "false",
+                    "loadLongJS": "false"
+                }
+            }
+        }
+    }
+}
