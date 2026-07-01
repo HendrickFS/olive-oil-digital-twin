@@ -2,7 +2,7 @@
 
 This document provides a detailed breakdown of the **Olive Oil Digital Twin** system architecture, based on the framework diagram shown below.
 
-![Digital Twin Architecture Diagram](dt_architecture_v8(1).png)
+![Digital Twin Architecture Diagram](dt_architecture.png)
 
 The system is structured as a layered digital twin framework, separating the physical production layer, edge collection/control, core twin logic, and user interface.
 

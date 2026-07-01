@@ -21,7 +21,7 @@ This repository implements a virtual representation (Digital Twin) of an industr
 
 The following diagram illustrates the structural layout of the Digital Twin Framework, mapping the data flow from physical equipment and edge sensors up to the core management services and visual interfaces.
 
-![Digital Twin Framework Architecture](docs/dt_architecture_v8(1).png)
+![Digital Twin Framework Architecture](docs/dt_architecture.png)
 
 *For an in-depth breakdown of each architectural layer, sub-entity, and the observable physical elements, see the [Architecture Documentation](docs/architecture.md).*
 
