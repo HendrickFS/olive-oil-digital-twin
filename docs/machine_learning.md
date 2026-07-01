@@ -108,10 +108,11 @@ A summary of the model coefficients of determination ($R^2$) across all predicte
 ### Model Predictions Examples
 Scatter plots comparing predicted values vs. physical ground truth:
 
-```carousel
+#### Yield Percentage
 ![Yield Percentage Prediction](ml_assets/actual_vs_predicted_yieldPercentage.png)
-<!-- slide -->
+
+#### Free Acidity
 ![Free Acidity Prediction](ml_assets/actual_vs_predicted_freeAcidity.png)
-<!-- slide -->
+
+#### Peroxide Value
 ![Peroxide Value Prediction](ml_assets/actual_vs_predicted_peroxideValue.png)
-```
