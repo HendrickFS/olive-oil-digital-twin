@@ -1,4 +1,4 @@
-sudo chown -R $(whoami):$(whoami) ditto/deployment/docker# Root .gitignore for digitalTwin repository
+# Root .gitignore for digitalTwin repository
 
 # Ignore mosquitto generated secrets in ditto deployment
 /ditto/deployment/docker/certs/
@@ -7,9 +7,30 @@ sudo chown -R $(whoami):$(whoami) ditto/deployment/docker# Root .gitignore for d
 /ditto/deployment/docker/*.pem
 /ditto/deployment/docker/server.key
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+ENV/
+catboost_info/
+
+# Java/Maven
+target/
+*.class
+
+# Log files and CSV outputs
+*.log
+logs.txt
+dataset-influx.csv
+mixer_graphs/
+
 # Node / build / IDE
 node_modules/
 dist/
 .DS_Store
 .idea/
 .vscode/
+
